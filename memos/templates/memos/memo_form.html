@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><h1>{{ title }}</h1><p>{{ subtitle }}</p></div>
+</div>
+
+{% include "partials/form_errors.html" with form=form %}
+
+<form method="post" enctype="multipart/form-data" id="memoForm">
+    {% csrf_token %}
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-file-lines"></i> Memorandum Content</h3>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Title <span class="required">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="form-error">{{ form.title.errors|first }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+            <label class="form-label">Body <span class="required">*</span></label>
+            {{ form.body }}
+            {% if form.body.errors %}<div class="form-error">{{ form.body.errors|first }}</div>{% endif %}
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Priority</label>
+                {{ form.priority }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Attachment</label>
+                <div class="file-upload">
+                    {{ form.attachment }}
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p class="font-medium">Click to upload or drag &amp; drop</p>
+                    <p class="text-light text-xs mt-1">PDF, Word, Excel, PowerPoint, images — max 100MB</p>
+                </div>
+                {% if memo.attachment %}
+                <div class="file-upload-filename">
+                    <span><i class="fa-solid fa-paperclip"></i> {{ memo.attachment_filename }}</span>
+                    <a href="{{ memo.attachment.url }}" target="_blank" class="dropdown-link">View</a>
+                </div>
+                {% else %}
+                <div class="file-upload-filename hidden"><span></span></div>
+                {% endif %}
+                {% if form.attachment.errors %}<div class="form-error">{{ form.attachment.errors|first }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if user.can_send_directly %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-users"></i> Recipients</h3>
+            <span class="text-xs text-muted">Select departments, individuals, or both</span>
+        </div>
+        {% include "partials/recipient_selector.html" with form=form %}
+        {% if form.departments.errors or form.individual_recipients.errors %}
+        <div class="form-error mt-2">Please select at least one department or individual recipient when sending directly.</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="form-actions">
+        <a href="{% url 'memos:my_memos' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" name="action" value="draft" class="btn btn-secondary">
+            <i class="fa-solid fa-floppy-disk"></i> Save Draft
+        </button>
+        <button type="submit" name="action" value="submit" class="btn btn-primary">
+            <i class="fa-solid fa-paper-plane"></i>
+            {% if memo and memo.status == "rejected" %}Resubmit for Approval{% else %}Submit for Approval{% endif %}
+        </button>
+        {% if user.can_send_directly %}
+        <button type="submit" name="action" value="send" class="btn btn-primary"
+                style="background:var(--color-success);border-color:var(--color-success);">
+            <i class="fa-solid fa-bolt"></i> Send Directly
+        </button>
+        {% endif %}
+    </div>
+</form>
+{% endblock %}

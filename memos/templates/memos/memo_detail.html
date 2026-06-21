@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block title %}{{ memo.title }}{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+
+{% block content %}
+
+{% include "partials/memo_progress_stepper.html" with memo=memo %}
+{% include "partials/rejection_comments_panel.html" with memo=memo can_edit=can_edit %}
+
+{% if memo.status == "pending" %}
+<div class="status-banner pending">
+    <div class="status-banner-icon"><i class="fa-solid fa-clock"></i></div>
+    <div class="status-banner-content">
+        <div class="status-banner-title">Pending Approval</div>
+        <div class="status-banner-body">
+            This memorandum is awaiting review.
+            {% if memo.submitted_at %}Submitted {{ memo.submitted_at|timesince }} ago.{% endif %}
+        </div>
+    </div>
+</div>
+{% elif memo.status == "approved" %}
+<div class="status-banner approved">
+    <div class="status-banner-icon"><i class="fa-solid fa-circle-check"></i></div>
+    <div class="status-banner-content">
+        <div class="status-banner-title">Approved</div>
+        <div class="status-banner-body">
+            Approved by {{ memo.approved_by.get_full_name|default:memo.approved_by.username }}
+            {% if memo.approved_at %}on {{ memo.approved_at|date:"M d, Y \a\t H:i" }}{% endif %}.
+            {% if can_send %}Ready to send.{% endif %}
+        </div>
+    </div>
+</div>
+{% elif memo.status == "sent" %}
+<div class="status-banner sent">
+    <div class="status-banner-icon"><i class="fa-solid fa-paper-plane"></i></div>
+    <div class="status-banner-content">
+        <div class="status-banner-title">Sent</div>
+        <div class="status-banner-body">
+            Distributed to {{ memo.total_recipients }} recipient(s).
+            {% if memo.sent_at %}Sent {{ memo.sent_at|date:"M d, Y \a\t H:i" }}.{% endif %}
+            Read by {{ memo.read_count }} ({{ memo.read_rate }}%).
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="memo-detail-header">
+    <div>
+        <div class="flex items-center gap-3 mb-2">
+            {% include "partials/approval_status_badge.html" with memo=memo %}
+            <span class="badge badge-priority-{{ memo.priority }}">{{ memo.get_priority_display }}</span>
+        </div>
+        <h1>{{ memo.title }}</h1>
+    </div>
+    <div class="page-header-actions">
+        {% if can_edit %}
+        <a href="{% url 'memos:edit' memo.pk %}" class="btn btn-secondary">
+            <i class="fa-solid fa-pen"></i> Edit
+        </a>
+        {% endif %}
+        {% if can_delete %}
+        <button class="btn btn-danger" data-modal-target="deleteModal">
+            <i class="fa-solid fa-trash"></i> Delete
+        </button>
+        {% endif %}
+        {% if can_send %}
+        <button class="btn btn-primary" data-modal-target="sendModal"
+                style="background:var(--color-success);border-color:var(--color-success);">
+            <i class="fa-solid fa-paper-plane"></i> Send Now
+        </button>
+        {% endif %}
+        {% if can_archive %}
+        <button class="btn btn-danger" data-modal-target="archiveModal">
+            <i class="fa-solid fa-box-archive"></i> Archive
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="memo-meta">
+        <div class="memo-meta-item">
+            <i class="fa-solid fa-user"></i>
+            <span>{{ memo.created_by.get_full_name|default:memo.created_by.username }}</span>
+        </div>
+        {% if memo.departments.exists %}
+        <div class="memo-meta-item">
+            <i class="fa-solid fa-building"></i>
+            <span>{{ memo.department_names }}</span>
+        </div>
+        {% endif %}
+        <div class="memo-meta-item">
+            <i class="fa-solid fa-calendar"></i>
+            <span>
+                {% if memo.status == "sent" %}Sent {{ memo.sent_at|date:"M d, Y \a\t H:i" }}
+                {% elif memo.status == "draft" %}Updated {{ memo.updated_at|date:"M d, Y \a\t H:i" }}
+                {% else %}Created {{ memo.created_at|date:"M d, Y \a\t H:i" }}{% endif %}
+            </span>
+        </div>
+    </div>
+    <div class="memo-body">{{ memo.body }}</div>
+
+    {% if memo.attachment %}
+    <div class="memo-attachment">
+        <div class="memo-attachment-icon"><i class="fa-solid fa-paperclip"></i></div>
+        <div class="flex-col flex-1">
+            <span class="font-medium text-sm">{{ memo.attachment_filename }}</span>
+            <span class="text-xs text-muted">Attachment</span>
+        </div>
+        <a href="{{ memo.attachment.url }}" target="_blank" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-download"></i> Download
+        </a>
+    </div>
+
+    {% comment %}Inline preview{% endcomment %}
+    {% with fname=memo.attachment_filename|lower %}
+    <div class="attachment-preview">
+        <div class="attachment-preview-header">
+            <span><i class="fa-solid fa-eye"></i> Preview — {{ memo.attachment_filename }}</span>
+            <a href="{{ memo.attachment.url }}" target="_blank" class="dropdown-link">Open in new tab</a>
+        </div>
+        {% if ".jpg" in fname or ".jpeg" in fname or ".png" in fname or ".gif" in fname or ".webp" in fname or ".bmp" in fname %}
+            <img src="{{ memo.attachment.url }}" alt="{{ memo.attachment_filename }}">
+        {% elif ".pdf" in fname %}
+            <iframe src="{{ memo.attachment.url }}" title="PDF Preview"></iframe>
+        {% else %}
+            <div class="attachment-preview-unsupported">
+                <i class="fa-solid fa-file" style="font-size:2rem;margin-bottom:var(--space-2);"></i>
+                <p>Preview not available for this file type.</p>
+                <a href="{{ memo.attachment.url }}" target="_blank" class="btn btn-secondary btn-sm" style="margin-top:var(--space-3);">
+                    <i class="fa-solid fa-download"></i> Download to view
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    {% endwith %}
+    {% endif %}
+</div>
+
+{% if user.can_send_directly and recipients_list %}
+<div class="card mt-6">
+    <div class="card-header">
+        <h3><i class="fa-solid fa-users"></i> Recipients ({{ memo.read_count }}/{{ memo.total_recipients }} read)</h3>
+        <div class="progress-bar" style="width:120px;">
+            <div class="progress-bar-fill" style="width:{{ memo.read_rate }}%;"></div>
+        </div>
+    </div>
+    <div class="table-wrapper" style="border:none;">
+        <table class="data-table">
+            <thead>
+                <tr><th>Recipient</th><th>Department</th><th>Status</th><th>Read At</th></tr>
+            </thead>
+            <tbody>
+                {% for rec in recipients_list %}
+                <tr>
+                    <td data-label="Recipient">
+                        <div class="cell-title">
+                            <div class="user-avatar" style="width:24px;height:24px;font-size:0.6rem;">
+                                {{ rec.recipient.first_name|first|default:rec.recipient.username|first|upper }}
+                            </div>
+                            {{ rec.recipient.get_full_name|default:rec.recipient.username }}
+                        </div>
+                    </td>
+                    <td data-label="Department">{{ rec.recipient.department.name|default:"—" }}</td>
+                    <td data-label="Status">
+                        {% if rec.is_read %}<span class="badge badge-sent"><i class="fa-solid fa-check"></i> Read</span>
+                        {% else %}<span class="badge badge-draft">Unread</span>{% endif %}
+                    </td>
+                    <td data-label="Read At">{{ rec.read_at|date:"M d, Y H:i"|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% include "partials/approval_history_card.html" with approval_history=approval_history %}
+
+{% if can_archive %}
+<div class="modal-overlay" id="archiveModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Archive Memorandum</h3>
+            <button class="modal-close" data-modal-close="archiveModal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body"><p>Are you sure you want to archive this memorandum?</p></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-modal-close="archiveModal">Cancel</button>
+            <form action="{% url 'memos:archive' memo.pk %}" method="post">
+                {% csrf_token %}<button type="submit" class="btn btn-danger">Archive</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if can_delete %}
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--color-danger);"></i> Delete Memorandum</h3>
+            <button class="modal-close" data-modal-close="deleteModal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <p class="text-sm" style="margin-bottom:var(--space-3);">
+                Are you sure you want to <strong>permanently delete</strong> this memorandum?
+            </p>
+            <div class="alert alert-error" style="margin-bottom:0;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>This action <strong>cannot be undone</strong>. The memo and all its data will be permanently removed.</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-modal-close="deleteModal">Cancel</button>
+            <form action="{% url 'memos:delete' memo.pk %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fa-solid fa-trash"></i> Permanently Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if can_send %}
+<div class="modal-overlay" id="sendModal">
+    <div class="modal" style="width:520px;">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-paper-plane"></i> Send Memorandum</h3>
+            <button class="modal-close" data-modal-close="sendModal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="{% url 'memos:send' memo.pk %}" method="post">
+            {% csrf_token %}
+            <div class="modal-body">
+                <p class="text-sm text-muted mb-4">
+                    Sent to all department members listed below. Optionally add individuals.
+                </p>
+                {% if memo.departments.exists %}
+                <div class="alert alert-info mb-4">
+                    <i class="fa-solid fa-building"></i>
+                    <span>Departments: <strong>{{ memo.department_names }}</strong></span>
+                </div>
+                {% endif %}
+                <div class="form-group">
+                    <label class="form-label">Additional Recipients <span class="text-muted" style="font-weight:normal;">(optional)</span></label>
+                    <div class="recipient-panel">
+                        <div class="recipient-search">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="sendUserSearch" placeholder="Search users..." autocomplete="off">
+                        </div>
+                        <div class="recipient-list" id="sendUserList" style="max-height:180px;">
+                            {% for u in send_form_users %}
+                            <label class="recipient-item" data-name="{{ u.get_full_name|lower }} {{ u.username|lower }}">
+                                <input type="checkbox" name="individual_recipients" value="{{ u.pk }}">
+                                <div class="recipient-item-info">
+                                    <div class="recipient-item-name">{{ u.get_full_name|default:u.username }}</div>
+                                    <div class="recipient-item-sub">{{ u.department.name|default:"No department" }}</div>
+                                </div>
+                            </label>
+                            {% empty %}
+                            <div class="empty-state" style="padding:var(--space-4);"><p>No users available.</p></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-modal-close="sendModal">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-paper-plane"></i> Send Now
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function(){
+    const s=document.getElementById("sendUserSearch"),l=document.getElementById("sendUserList");
+    if(s&&l){
+        s.addEventListener("input",()=>{const q=s.value.toLowerCase();l.querySelectorAll(".recipient-item").forEach(i=>{i.style.display=i.dataset.name.includes(q)?"":"none";});});
+        l.querySelectorAll(".recipient-item").forEach(i=>{const c=i.querySelector("input");if(c)c.addEventListener("change",()=>i.classList.toggle("selected",c.checked));});
+    }
+})();
+</script>
+{% endif %}
+
+{% include "partials/approval_actions.html" with memo=memo rejection_form=rejection_form %}
+
+{% endblock %}

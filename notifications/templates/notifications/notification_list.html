@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Notifications</h1>
+        <p>{% if unread_count_all %}You have <strong>{{ unread_count_all }}</strong> unread notification{{ unread_count_all|pluralize }}.{% else %}You're all caught up.{% endif %}</p>
+    </div>
+    {% if unread_count_all %}
+    <div class="page-header-actions">
+        <form method="post" action="{% url 'notifications:mark_all_read' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'notifications:list' %}">
+            <button type="submit" class="btn btn-secondary">
+                <i class="fa-solid fa-check-double"></i> Mark All as Read
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<div class="flex gap-2 mb-4">
+    <a href="?filter=all" class="btn btn-sm {% if active_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All ({{ total_count }})</a>
+    <a href="?filter=unread" class="btn btn-sm {% if active_filter == 'unread' %}btn-primary{% else %}btn-secondary{% endif %}">Unread ({{ unread_count_all }})</a>
+    <a href="?filter=read" class="btn btn-sm {% if active_filter == 'read' %}btn-primary{% else %}btn-secondary{% endif %}">Read</a>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;" data-auto-refresh="4000">
+    {% if notifications %}
+        {% for notif in notifications %}
+        <div class="notification-item {% if not notif.is_read %}notification-unread{% endif %}" id="notif-{{ notif.pk }}">
+            <div class="notification-icon"><i class="fa-solid fa-envelope"></i></div>
+            <div class="notification-content">
+                {% if notif.memo %}
+                    <a href="{% url 'memos:detail' notif.memo.pk %}" class="notification-title">{{ notif.message }}</a>
+                {% else %}
+                    <span class="notification-title">{{ notif.message }}</span>
+                {% endif %}
+                <span class="notification-time">
+                    <i class="fa-regular fa-clock"></i>
+                    {{ notif.created_at|timesince }} ago &nbsp;&middot;&nbsp; {{ notif.created_at|date:"M d, Y H:i" }}
+                </span>
+            </div>
+            <div class="notification-actions">
+                {% if not notif.is_read %}
+                <form method="post" action="{% url 'notifications:mark_read' notif.pk %}" class="notif-read-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn-ghost btn-sm" title="Mark as read">
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                </form>
+                {% endif %}
+                <form method="post" action="{% url 'notifications:delete' notif.pk %}" class="notif-delete-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-ghost btn-sm" title="Dismiss">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+        {% include "partials/pagination.html" with page_obj=page_obj %}
+    {% else %}
+        {% include "partials/empty_state.html" with icon="bell-slash" title="No notifications" message="You have no notifications in this category." %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll(".notif-read-form").forEach(form => {
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const row = form.closest(".notification-item");
+        fetch(form.action, {
+            method: "POST",
+            headers: {"X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value, "X-Requested-With": "XMLHttpRequest"},
+        }).then(r => r.json()).then(data => {
+            if (data.status === "ok") { row.classList.remove("notification-unread"); form.remove(); }
+        });
+    });
+});
+document.querySelectorAll(".notif-delete-form").forEach(form => {
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        if (!confirm("Dismiss this notification?")) return;
+        const row = form.closest(".notification-item");
+        fetch(form.action, {
+            method: "POST",
+            headers: {"X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value, "X-Requested-With": "XMLHttpRequest"},
+        }).then(r => r.json()).then(data => {
+            if (data.status === "deleted") { row.style.opacity = "0"; setTimeout(() => row.remove(), 200); }
+        });
+    });
+});
+</script>
+{% endblock %}

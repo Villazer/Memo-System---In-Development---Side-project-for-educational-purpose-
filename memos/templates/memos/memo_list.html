@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>{{ page_title }}
+            <span class="live-badge" style="margin-left:var(--space-2);vertical-align:middle;">
+                <span class="live-badge-dot"></span> LIVE
+            </span>
+        </h1>
+        <p>{{ page_subtitle }}</p>
+    </div>
+    <div class="page-header-actions">
+        {% include "partials/search_bar.html" with placeholder="Search by title..." %}
+        <a href="{% url 'memos:create' %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Create Memo
+        </a>
+    </div>
+</div>
+
+{% if list_type == "my_memos" and status_counts %}
+<div class="status-filter-tabs">
+    <a href="?" class="status-tab {% if not request.GET.status %}active-tab{% endif %}">All</a>
+    <a href="?status=draft" class="status-tab {% if request.GET.status == 'draft' %}active-tab{% endif %}">
+        <i class="fa-solid fa-file-pen"></i> Draft
+        <span class="status-tab-count">{{ status_counts.draft }}</span>
+    </a>
+    <a href="?status=pending" class="status-tab {% if request.GET.status == 'pending' %}active-tab{% endif %}">
+        <i class="fa-solid fa-clock"></i> Pending
+        <span class="status-tab-count">{{ status_counts.pending }}</span>
+    </a>
+    <a href="?status=rejected" class="status-tab {% if request.GET.status == 'rejected' %}active-tab{% endif %}">
+        <i class="fa-solid fa-circle-xmark"></i> Rejected
+        <span class="status-tab-count">{{ status_counts.rejected }}</span>
+    </a>
+    <a href="?status=approved" class="status-tab {% if request.GET.status == 'approved' %}active-tab{% endif %}">
+        <i class="fa-solid fa-circle-check"></i> Approved
+        <span class="status-tab-count">{{ status_counts.approved }}</span>
+    </a>
+    <a href="?status=sent" class="status-tab {% if request.GET.status == 'sent' %}active-tab{% endif %}">
+        <i class="fa-solid fa-paper-plane"></i> Sent
+        <span class="status-tab-count">{{ status_counts.sent }}</span>
+    </a>
+</div>
+{% endif %}
+
+<div class="card" data-auto-refresh="5000">
+    {% if memos %}
+    <div class="table-wrapper" style="border:none;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>{% if list_type == "assigned" %}From{% else %}Created By{% endif %}</th>
+                    {% if list_type == "pending" %}<th>From Dept.</th>{% else %}<th>Departments</th>{% endif %}
+                    <th>Priority</th>
+                    <th>Status</th>
+                    {% if list_type == "sent" %}<th>Read Rate</th>{% endif %}
+                    <th>Date</th>
+                    {% if list_type == "my_memos" %}<th></th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for memo in memos %}
+                <tr class="{% if memo.is_unread_for_user %}row-unread{% endif %}">
+                    <td data-label="Title">
+                        <a href="{% url 'memos:detail' memo.id %}" class="cell-title">
+                            {% if memo.is_unread_for_user %}<span class="unread-dot"></span>{% endif %}
+                            <span class="truncate" style="max-width:220px;">{{ memo.title }}</span>
+                            {% if memo.attachment %}<i class="fa-solid fa-paperclip text-light" style="font-size:0.6rem;"></i>{% endif %}
+                        </a>
+                    </td>
+                    <td data-label="Creator">
+                        <div>
+                            <div class="font-medium">{{ memo.created_by.get_full_name|default:memo.created_by.username }}</div>
+                            {% if memo.created_by.department %}
+                            <div class="text-xs text-muted">{{ memo.created_by.department.name }}</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td data-label="Departments">
+                        {% if list_type == "pending" %}
+                            {% if memo.created_by.department %}
+                                <span class="badge badge-draft">{{ memo.created_by.department.code }}</span>
+                                <span class="text-xs" style="display:block;margin-top:2px;">{{ memo.created_by.department.name }}</span>
+                            {% else %}
+                                <span class="text-muted text-xs">No dept.</span>
+                            {% endif %}
+                        {% else %}
+                            {% with depts=memo.departments.all %}
+                                {% if depts %}
+                                    {% for d in depts|slice:":2" %}
+                                        <span class="badge badge-draft" style="margin-right:2px;">{{ d.code }}</span>
+                                    {% endfor %}
+                                    {% if depts.count > 2 %}
+                                        <span class="text-xs text-muted">+{{ depts.count|add:"-2" }}</span>
+                                    {% endif %}
+                                {% else %}—{% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    </td>
+                    <td data-label="Priority">
+                        <span class="badge badge-priority-{{ memo.priority }}">{{ memo.get_priority_display }}</span>
+                    </td>
+                    <td data-label="Status">
+                        {% include "partials/approval_status_badge.html" with memo=memo %}
+                    </td>
+                    {% if list_type == "sent" %}
+                    <td data-label="Read Rate">
+                        <div class="flex items-center gap-2">
+                            <div class="progress-bar" style="width:70px;">
+                                <div class="progress-bar-fill" style="width:{{ memo.read_rate }}%;"></div>
+                            </div>
+                            <span class="text-xs text-muted">{{ memo.read_rate }}%</span>
+                        </div>
+                    </td>
+                    {% endif %}
+                    <td data-label="Date">
+                        {% if list_type == "sent" or list_type == "assigned" %}{{ memo.sent_at|date:"M d, Y"|default:"—" }}
+                        {% elif list_type == "pending" %}{{ memo.submitted_at|date:"M d, Y"|default:"—" }}
+                        {% else %}{{ memo.updated_at|date:"M d, Y" }}{% endif %}
+                    </td>
+                    {% if list_type == "my_memos" %}
+                    <td data-label="Actions">
+                        {% if memo.status == "draft" or memo.status == "rejected" %}
+                        <button class="btn btn-ghost btn-sm btn-icon"
+                                title="Delete"
+                                data-modal-target="delModal-{{ memo.pk }}">
+                            <i class="fa-solid fa-trash" style="color:var(--color-danger);"></i>
+                        </button>
+                        <div class="modal-overlay" id="delModal-{{ memo.pk }}">
+                            <div class="modal">
+                                <div class="modal-header">
+                                    <h3><i class="fa-solid fa-trash" style="color:var(--color-danger);"></i> Delete Draft</h3>
+                                    <button class="modal-close" data-modal-close="delModal-{{ memo.pk }}"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-sm mb-3">Permanently delete <strong>"{{ memo.title }}"</strong>?</p>
+                                    <div class="alert alert-error" style="margin-bottom:0;">
+                                        <i class="fa-solid fa-circle-exclamation"></i>
+                                        <span>This cannot be undone.</span>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-secondary" data-modal-close="delModal-{{ memo.pk }}">Cancel</button>
+                                    <form action="{% url 'memos:delete' memo.pk %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fa-solid fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "partials/pagination.html" with page_obj=page_obj %}
+    {% else %}
+        {% include "partials/empty_state.html" with icon=empty_icon title=empty_title message=empty_message action_url=memo_create_url action_label="Create Memo" %}
+    {% endif %}
+</div>
+{% endblock %}
