@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><h1>{{ title }}</h1><p>{% if department %}Update department information.{% else %}Fill in the details to create a new department.{% endif %}</p></div>
+</div>
+<div class="card" style="max-width:600px;">
+    {% include "partials/form_errors.html" with form=form %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Department Name <span class="required">*</span></label>
+            {{ form.name }}
+            {% if form.name.errors %}<div class="form-error">{{ form.name.errors|first }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+            <label class="form-label">Department Code <span class="required">*</span></label>
+            {{ form.code }}
+            <p class="form-hint">Short identifier e.g. HR, IT, FIN. Stored in uppercase.</p>
+            {% if form.code.errors %}<div class="form-error">{{ form.code.errors|first }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+        </div>
+        <div class="form-actions">
+            {% if department %}<a href="{% url 'departments:detail' department.pk %}" class="btn btn-secondary">Cancel</a>
+            {% else %}<a href="{% url 'departments:list' %}" class="btn btn-secondary">Cancel</a>{% endif %}
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> {% if department %}Save Changes{% else %}Create Department{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

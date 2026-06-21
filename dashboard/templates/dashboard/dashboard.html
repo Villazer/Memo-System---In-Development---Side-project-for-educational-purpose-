@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Welcome back, {{ user.first_name|default:user.username }}</h1>
+        <p>Here's an overview of your memorandums and activity.</p>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'memos:create' %}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Create Memo
+        </a>
+    </div>
+</div>
+
+<div class="stats-grid" data-auto-refresh="5000">
+    {% for stat in stats %}
+        {% include "partials/stats_card.html" with label=stat.label value=stat.value icon=stat.icon color=stat.color %}
+    {% endfor %}
+</div>
+
+<div class="card mb-6">
+    <div class="card-header"><h3><i class="fa-solid fa-bolt"></i> Quick Actions</h3></div>
+    <div class="flex gap-3 flex-wrap">
+        {% for action in quick_actions %}
+        <a href="{% url action.url %}" class="btn btn-secondary">
+            <i class="fa-solid fa-{{ action.icon }}" style="color:var(--color-{{ action.color }});"></i>
+            {{ action.label }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+{% if role_view == "superadmin" or role_view == "admin" %}
+<div class="grid grid-2" style="align-items:start;">
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-clock" style="color:var(--color-warning);"></i> Pending Approvals</h3>
+            <a href="{% url 'memos:pending' %}" class="dropdown-link">View all</a>
+        </div>
+        {% if pending_memos %}
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Title</th><th>Submitted By</th><th>Submitted</th><th></th></tr></thead>
+                <tbody>
+                    {% for memo in pending_memos %}
+                    <tr>
+                        <td data-label="Title">
+                            <a href="{% url 'memos:detail' memo.id %}" class="font-medium truncate" style="max-width:180px;display:block;">
+                                {{ memo.title }}
+                            </a>
+                        </td>
+                        <td data-label="By">{{ memo.created_by.get_full_name|default:memo.created_by.username }}</td>
+                        <td data-label="Submitted">{{ memo.submitted_at|timesince }} ago</td>
+                        <td><a href="{% url 'memos:detail' memo.id %}" class="btn btn-sm btn-secondary">Review</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        {% include "partials/empty_state.html" with icon="check-double" title="All caught up" message="No memorandums are awaiting approval." %}
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-paper-plane" style="color:var(--color-success);"></i> Recently Sent</h3>
+            <a href="{% url 'memos:sent' %}" class="dropdown-link">View all</a>
+        </div>
+        {% if recent_sent %}
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Title</th><th>Read Rate</th><th>Sent</th></tr></thead>
+                <tbody>
+                    {% for memo in recent_sent %}
+                    <tr>
+                        <td data-label="Title">
+                            <a href="{% url 'memos:detail' memo.id %}" class="font-medium truncate" style="max-width:180px;display:block;color:var(--color-primary);">
+                                {{ memo.title }}
+                            </a>
+                        </td>
+                        <td data-label="Read Rate">
+                            <div class="flex items-center gap-2">
+                                <div class="progress-bar" style="width:70px;">
+                                    <div class="progress-bar-fill" style="width:{{ memo.read_rate }}%;"></div>
+                                </div>
+                                <span class="text-xs text-muted">{{ memo.read_rate }}%</span>
+                            </div>
+                        </td>
+                        <td data-label="Sent">{{ memo.sent_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        {% include "partials/empty_state.html" with icon="paper-plane" title="No sent memos" message="Sent memorandums will appear here." %}
+        {% endif %}
+    </div>
+
+    {% if role_view == "admin" and approved_memos %}
+    <div class="card" style="grid-column:span 2;">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-circle-check" style="color:var(--color-info);"></i> Approved &amp; Ready to Send</h3>
+            <a href="{% url 'memos:my_memos' %}?status=approved" class="dropdown-link">View all</a>
+        </div>
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Title</th><th>Approved By</th><th>Approved</th><th>Departments</th><th></th></tr></thead>
+                <tbody>
+                    {% for memo in approved_memos %}
+                    <tr>
+                        <td data-label="Title">
+                            <a href="{% url 'memos:detail' memo.id %}" class="font-medium" style="color:var(--color-primary);">{{ memo.title }}</a>
+                        </td>
+                        <td data-label="Approved By">{{ memo.approved_by.get_full_name|default:"—" }}</td>
+                        <td data-label="Approved">{{ memo.approved_at|date:"M d, Y" }}</td>
+                        <td data-label="Departments">
+                            {% for d in memo.departments.all|slice:":2" %}
+                                <span class="badge badge-draft">{{ d.code }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <a href="{% url 'memos:detail' memo.id %}" class="btn btn-sm btn-primary">
+                                <i class="fa-solid fa-paper-plane"></i> Send
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% elif role_view == "staff" %}
+<div class="grid grid-2" style="align-items:start;">
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-inbox"></i> Assigned to Me</h3>
+            <a href="{% url 'memos:assigned' %}" class="dropdown-link">View all</a>
+        </div>
+        {% if recent_received %}
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Title</th><th>From</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for memo in recent_received %}
+                    <tr class="{% if memo.is_unread_for_user %}row-unread{% endif %}">
+                        <td data-label="Title">
+                            <a href="{% url 'memos:detail' memo.id %}" class="cell-title">
+                                {% if memo.is_unread_for_user %}<span class="unread-dot"></span>{% endif %}
+                                <span class="truncate" style="max-width:180px;">{{ memo.title }}</span>
+                            </a>
+                        </td>
+                        <td data-label="From">{{ memo.created_by.get_full_name|default:memo.created_by.username }}</td>
+                        <td data-label="Date">{{ memo.sent_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        {% include "partials/empty_state.html" with icon="inbox" title="No memos assigned" message="Memos distributed to you will appear here." %}
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-file-lines"></i> My Memo Status</h3>
+            <a href="{% url 'memos:my_memos' %}" class="dropdown-link">View all</a>
+        </div>
+
+        {% if rejected_memos %}
+        <div class="mb-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="badge badge-rejected"><i class="fa-solid fa-circle-xmark"></i> Needs Attention</span>
+            </div>
+            {% for memo in rejected_memos %}
+            <a href="{% url 'memos:detail' memo.id %}" class="rejection-panel" style="display:block;text-decoration:none;margin-bottom:var(--space-2);">
+                <div class="font-medium text-sm" style="color:#991b1b;">{{ memo.title }}</div>
+                <div class="text-xs mt-1" style="color:#b91c1c;">
+                    <i class="fa-solid fa-user"></i>
+                    Rejected by {{ memo.rejected_by.get_full_name|default:"Admin" }}
+                    &middot; {{ memo.rejected_at|timesince }} ago
+                </div>
+                {% if memo.rejection_comments %}
+                <div class="text-xs mt-2" style="color:#7f1d1d;">{{ memo.rejection_comments|truncatechars:100 }}</div>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if pending_memos %}
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Awaiting Review</span>
+            </div>
+            {% for memo in pending_memos %}
+            <a href="{% url 'memos:detail' memo.id %}" class="dropdown-item"
+               style="padding:var(--space-3) 0;border-bottom:1px solid var(--color-border);">
+                <div class="dropdown-item-icon" style="background:var(--color-warning-bg);color:var(--color-warning);">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="dropdown-item-content">
+                    <p>{{ memo.title }}</p>
+                    <span>Submitted {{ memo.submitted_at|timesince }} ago</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if not rejected_memos and not pending_memos %}
+        {% include "partials/empty_state.html" with icon="check-circle" title="All good" message="No rejected or pending memos right now." %}
+        {% endif %}
+    </div>
+
+</div>
+{% endif %}
+
+<div class="card mt-6">
+    <div class="card-header">
+        <h3><i class="fa-solid fa-bell"></i> Recent Activity</h3>
+        <a href="{% url 'notifications:list' %}" class="dropdown-link">View all</a>
+    </div>
+    {% if recent_activity %}
+    {% for notif in recent_activity %}
+    <div class="dropdown-item" style="padding:var(--space-3) 0;border-bottom:1px solid var(--color-border);">
+        <div class="dropdown-item-icon"><i class="fa-solid fa-envelope"></i></div>
+        <div class="dropdown-item-content">
+            <p style="font-weight:var(--font-weight-medium);white-space:normal;">{{ notif.message }}</p>
+            <span>{{ notif.created_at|timesince }} ago</span>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    {% include "partials/empty_state.html" with icon="bell-slash" title="No recent activity" message="Notifications will appear here." %}
+    {% endif %}
+</div>
+
+{% endblock %}

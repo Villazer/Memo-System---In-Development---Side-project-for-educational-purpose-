@@ -1,0 +1,90 @@
+<div class="recipient-selector">
+    <div class="recipient-panel">
+        <div class="recipient-panel-header">
+            <h4><i class="fa-solid fa-building"></i> Departments</h4>
+            <span class="recipient-count-badge" id="deptCount">0</span>
+        </div>
+        <div class="recipient-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="deptSearch" placeholder="Filter departments..." autocomplete="off">
+        </div>
+        <label class="recipient-select-all">
+            <input type="checkbox" id="deptSelectAllChk"> Select all
+        </label>
+        <div class="recipient-list" id="deptList">
+            {% for choice in form.departments %}
+            <label class="recipient-item {% if choice.data.selected %}selected{% endif %}" data-name="{{ choice.data.label|lower }}">
+                <input type="checkbox" name="{{ form.departments.html_name }}" value="{{ choice.data.value }}" {% if choice.data.selected %}checked{% endif %}>
+                <div class="recipient-item-info">
+                    <div class="recipient-item-name">{{ choice.data.label }}</div>
+                    <div class="recipient-item-sub">Department</div>
+                </div>
+            </label>
+            {% empty %}
+            <div class="empty-state" style="padding:var(--space-6);"><i class="fa-solid fa-building"></i><p>No departments found.</p></div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="recipient-panel">
+        <div class="recipient-panel-header">
+            <h4><i class="fa-solid fa-users"></i> Individual Recipients</h4>
+            <span class="recipient-count-badge" id="userCount">0</span>
+        </div>
+        <div class="recipient-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="userSearch" placeholder="Search by name..." autocomplete="off">
+        </div>
+        <label class="recipient-select-all">
+            <input type="checkbox" id="userSelectAllChk"> Select all visible
+        </label>
+        <div class="recipient-list" id="userList">
+            {% for choice in form.individual_recipients %}
+            <label class="recipient-item {% if choice.data.selected %}selected{% endif %}" data-name="{{ choice.data.label|lower }}">
+                <input type="checkbox" name="{{ form.individual_recipients.html_name }}" value="{{ choice.data.value }}" {% if choice.data.selected %}checked{% endif %}>
+                <div class="recipient-item-info">
+                    <div class="recipient-item-name">{{ choice.data.label }}</div>
+                </div>
+            </label>
+            {% empty %}
+            <div class="empty-state" style="padding:var(--space-6);"><i class="fa-solid fa-users"></i><p>No users available.</p></div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    function setupPanel(listId, searchId, countId, allChkId){
+        const list=document.getElementById(listId);
+        const search=document.getElementById(searchId);
+        const countEl=document.getElementById(countId);
+        const allChk=document.getElementById(allChkId);
+        if(!list)return;
+        const items=list.querySelectorAll(".recipient-item");
+        function updateCount(){
+            const n=list.querySelectorAll('input[type="checkbox"]:checked').length;
+            if(countEl)countEl.textContent=n;
+        }
+        items.forEach(item=>{
+            const chk=item.querySelector('input[type="checkbox"]');
+            if(!chk)return;
+            chk.addEventListener("change",()=>{item.classList.toggle("selected",chk.checked);updateCount();});
+            item.classList.toggle("selected",chk.checked);
+        });
+        if(search){search.addEventListener("input",()=>{
+            const q=search.value.toLowerCase();
+            items.forEach(item=>{item.style.display=(item.dataset.name||"").includes(q)?"":"none";});
+        });}
+        if(allChk){allChk.addEventListener("change",function(){
+            items.forEach(item=>{
+                if(item.style.display==="none")return;
+                const chk=item.querySelector('input[type="checkbox"]');
+                if(chk){chk.checked=allChk.checked;item.classList.toggle("selected",chk.checked);}
+            });
+            updateCount();
+        });}
+        updateCount();
+    }
+    setupPanel("deptList","deptSearch","deptCount","deptSelectAllChk");
+    setupPanel("userList","userSearch","userCount","userSelectAllChk");
+})();
+</script>

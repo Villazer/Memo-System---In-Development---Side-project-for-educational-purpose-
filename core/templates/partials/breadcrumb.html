@@ -1,0 +1,11 @@
+<nav class="breadcrumb">
+    <a href="{% url 'dashboard:index' %}"><i class="fa-solid fa-house"></i></a>
+    {% for item in breadcrumbs %}
+        <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
+        {% if not forloop.last %}
+            <a href="{{ item.url }}">{{ item.label }}</a>
+        {% else %}
+            <span class="current">{{ item.label }}</span>
+        {% endif %}
+    {% endfor %}
+</nav>

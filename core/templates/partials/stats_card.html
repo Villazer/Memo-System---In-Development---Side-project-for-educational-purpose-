@@ -1,0 +1,10 @@
+<div class="stat-card">
+    <div class="stat-card-info">
+        <span class="label">{{ label }}</span>
+        <span class="value">{{ value }}</span>
+        {% if change %}<span class="change {{ change_dir }}">{% if change_dir == "up" %}<i class="fa-solid fa-arrow-up"></i>{% elif change_dir == "down" %}<i class="fa-solid fa-arrow-down"></i>{% endif %}{{ change }}</span>{% endif %}
+    </div>
+    <div class="stat-card-icon {{ color|default:'primary' }}">
+        <i class="fa-solid fa-{{ icon|default:'chart-simple' }}"></i>
+    </div>
+</div>

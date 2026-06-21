@@ -1,0 +1,18 @@
+<div class="modal-overlay" id="{{ modal_id }}">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>{{ title }}</h3>
+            <button class="modal-close" data-modal-close="{{ modal_id }}"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body"><p>{{ body }}</p></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-modal-close="{{ modal_id }}">Cancel</button>
+            {% if confirm_url %}
+            <form action="{{ confirm_url }}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn {{ confirm_class|default:'btn-primary' }}">{{ confirm_label|default:"Confirm" }}</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>

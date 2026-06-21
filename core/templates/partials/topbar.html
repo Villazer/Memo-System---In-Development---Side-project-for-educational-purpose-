@@ -1,0 +1,28 @@
+<header class="topbar">
+    <div class="topbar-left">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        {% include "partials/search_bar.html" %}
+    </div>
+    <div class="topbar-right">
+        <div class="user-menu">
+            <button class="topbar-icon-btn" id="notifBellToggle" aria-label="Notifications">
+                <i class="fa-regular fa-bell"></i>
+                {% if unread_notif_count %}<span class="badge-dot"></span>{% endif %}
+            </button>
+            {% include "partials/notification_dropdown.html" %}
+        </div>
+        <div class="user-menu">
+            <button class="user-menu-trigger" id="userMenuToggle">
+                <div class="user-avatar">{{ user.first_name|first|default:user.username|first|upper }}</div>
+                <div class="user-menu-info hide-mobile">
+                    <div class="name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="role">{{ user.get_role_display }}</div>
+                </div>
+                <i class="fa-solid fa-chevron-down text-xs hide-mobile"></i>
+            </button>
+            {% include "partials/user_dropdown.html" %}
+        </div>
+    </div>
+</header>

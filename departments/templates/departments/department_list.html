@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Departments{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><h1>Departments</h1><p>Manage organizational departments and their members.</p></div>
+    <div class="page-header-actions">
+        {% include "partials/search_bar.html" with placeholder="Search departments..." %}
+        <a href="{% url 'departments:create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Department</a>
+    </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(2,1fr);max-width:480px;margin-bottom:var(--space-6);">
+    {% include "partials/stats_card.html" with label="Total Departments" value=total_departments icon="building" color="primary" %}
+    {% include "partials/stats_card.html" with label="Total Members" value=total_members icon="users" color="success" %}
+</div>
+<div class="table-wrapper">
+    {% if departments %}
+    <table class="data-table">
+        <thead>
+            <tr><th>Department</th><th>Code</th><th>Members</th><th>Active Memos</th><th>Created</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for dept in departments %}
+            <tr>
+                <td data-label="Department">
+                    <a href="{% url 'departments:detail' dept.pk %}" class="font-semibold" style="color:var(--color-primary);">{{ dept.name }}</a>
+                    {% if dept.description %}<p class="text-xs text-muted mt-1 truncate" style="max-width:240px;">{{ dept.description }}</p>{% endif %}
+                </td>
+                <td data-label="Code"><span class="badge badge-draft">{{ dept.code }}</span></td>
+                <td data-label="Members"><div class="flex items-center gap-2"><i class="fa-solid fa-users text-muted"></i>{{ dept.member_count }}</div></td>
+                <td data-label="Active Memos"><div class="flex items-center gap-2"><i class="fa-solid fa-envelope text-muted"></i>{{ dept.active_memo_count }}</div></td>
+                <td data-label="Created">{{ dept.created_at|date:"M d, Y" }}</td>
+                <td data-label="Actions">
+                    <div class="flex items-center gap-2">
+                        <a href="{% url 'departments:detail' dept.pk %}" class="btn btn-ghost btn-sm btn-icon" title="View"><i class="fa-solid fa-eye"></i></a>
+                        <a href="{% url 'departments:edit' dept.pk %}" class="btn btn-ghost btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                        <a href="{% url 'departments:members' dept.pk %}" class="btn btn-ghost btn-sm btn-icon" title="Manage Members"><i class="fa-solid fa-user-gear"></i></a>
+                        <button class="btn btn-ghost btn-sm btn-icon" title="Delete" data-modal-target="deleteModal-{{ dept.pk }}">
+                            <i class="fa-solid fa-trash" style="color:var(--color-danger);"></i>
+                        </button>
+                    </div>
+                    <div class="modal-overlay" id="deleteModal-{{ dept.pk }}">
+                        <div class="modal">
+                            <div class="modal-header"><h3>Delete Department</h3><button class="modal-close" data-modal-close="deleteModal-{{ dept.pk }}"><i class="fa-solid fa-xmark"></i></button></div>
+                            <div class="modal-body"><p>Are you sure you want to delete <strong>{{ dept.name }}</strong>? This cannot be undone.</p></div>
+                            <div class="modal-footer">
+                                <button class="btn btn-secondary" data-modal-close="deleteModal-{{ dept.pk }}">Cancel</button>
+                                <form method="post" action="{% url 'departments:delete' dept.pk %}">{% csrf_token %}<button type="submit" class="btn btn-danger">Delete</button></form>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "partials/pagination.html" with page_obj=page_obj %}
+    {% else %}
+        {% include "partials/empty_state.html" with icon="building" title="No departments yet" message="Create your first department to start organizing users and memos." action_url="/departments/create/" action_label="Add Department" %}
+    {% endif %}
+</div>
+{% endblock %}

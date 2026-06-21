@@ -1,0 +1,76 @@
+{% load static %}
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+        <div class="sidebar-brand-text">
+            <strong>M.I.N.D.S</strong>
+            <span>Memo Distribution</span>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="{% url 'dashboard:index' %}" class="sidebar-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+            <i class="fa-solid fa-gauge"></i><span>Dashboard</span>
+        </a>
+
+        <div class="sidebar-section-label">Memorandums</div>
+
+        <a href="{% url 'memos:create' %}" class="sidebar-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}">
+            <i class="fa-solid fa-plus"></i><span>Create Memo</span>
+        </a>
+
+        <a href="{% url 'memos:my_memos' %}" class="sidebar-link {% if request.resolver_match.url_name == 'my_memos' %}active{% endif %}">
+            <i class="fa-solid fa-file-lines"></i><span>My Memos</span>
+            {% if my_pending_count %}<span class="sidebar-link-badge" style="background:var(--color-warning);">{{ my_pending_count }}</span>
+            {% elif my_rejected_count %}<span class="sidebar-link-badge" style="background:var(--color-danger);">{{ my_rejected_count }}</span>{% endif %}
+        </a>
+
+        {% if user.can_send_directly %}
+        <a href="{% url 'memos:pending' %}" class="sidebar-link {% if request.resolver_match.url_name == 'pending' %}active{% endif %}">
+            <i class="fa-solid fa-clock"></i><span>Pending Approval</span>
+            {% if pending_count %}<span class="sidebar-link-badge" style="background:var(--color-warning);">{{ pending_count }}</span>{% endif %}
+        </a>
+        <a href="{% url 'memos:sent' %}" class="sidebar-link {% if request.resolver_match.url_name == 'sent' %}active{% endif %}">
+            <i class="fa-solid fa-paper-plane"></i><span>Sent</span>
+        </a>
+        {% else %}
+        <a href="{% url 'memos:assigned' %}" class="sidebar-link {% if request.resolver_match.url_name == 'assigned' %}active{% endif %}">
+            <i class="fa-solid fa-inbox"></i><span>Assigned to Me</span>
+            {% if unread_count %}<span class="sidebar-link-badge">{{ unread_count }}</span>{% endif %}
+        </a>
+        {% endif %}
+
+        <a href="{% url 'memos:archived' %}" class="sidebar-link {% if request.resolver_match.url_name == 'archived' %}active{% endif %}">
+            <i class="fa-solid fa-box-archive"></i><span>Archived</span>
+        </a>
+
+        <a href="{% url 'notifications:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'notifications' %}active{% endif %}">
+            <i class="fa-solid fa-bell"></i><span>Notifications</span>
+            {% if unread_notif_count %}<span class="sidebar-link-badge">{{ unread_notif_count }}</span>{% endif %}
+        </a>
+
+        {% if user.is_superadmin or user.is_admin %}
+        <div class="sidebar-section-label">Management</div>
+        <a href="{% url 'reports:index' %}" class="sidebar-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
+            <i class="fa-solid fa-chart-line"></i><span>Reports</span>
+        </a>
+        {% endif %}
+
+        {% if user.can_manage_departments %}
+        <a href="{% url 'departments:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'departments' %}active{% endif %}">
+            <i class="fa-solid fa-building"></i><span>Departments</span>
+        </a>
+        <a href="{% url 'users:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'users' %}active{% endif %}">
+            <i class="fa-solid fa-users"></i><span>Users</span>
+        </a>
+        <div class="sidebar-section-label">System</div>
+        <a href="{% url 'settings_app:index' %}" class="sidebar-link {% if request.resolver_match.app_name == 'settings_app' %}active{% endif %}">
+            <i class="fa-solid fa-gear"></i><span>Settings</span>
+        </a>
+        {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+        <a href="{% url 'accounts:profile' %}" class="sidebar-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+            <i class="fa-solid fa-user"></i><span>My Profile</span>
+        </a>
+    </div>
+</aside>

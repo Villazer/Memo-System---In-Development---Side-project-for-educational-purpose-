@@ -1,0 +1,11 @@
+{% with status=memo.status %}
+<span class="badge badge-{{ status }}">
+    {% if status == "draft" %}<i class="fa-solid fa-file-pen"></i> Draft
+    {% elif status == "pending" %}<i class="fa-solid fa-clock"></i> Pending Approval
+    {% elif status == "rejected" %}<i class="fa-solid fa-circle-xmark"></i> Rejected
+    {% elif status == "approved" %}<i class="fa-solid fa-circle-check"></i> Approved
+    {% elif status == "sent" %}<i class="fa-solid fa-paper-plane"></i> Sent
+    {% elif status == "archived" %}<i class="fa-solid fa-box-archive"></i> Archived
+    {% endif %}
+</span>
+{% endwith %}

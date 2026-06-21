@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | M.I.N.D.S</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+    <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--color-sidebar-bg) 0%, #1e293b 100%);
+            padding: var(--space-4);
+        }
+        .login-card {
+            width: 420px;
+            max-width: 100%;
+            background: var(--color-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: var(--space-8);
+        }
+        .login-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+        .login-brand-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-lg);
+            background: var(--color-primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-xl);
+            margin-bottom: var(--space-4);
+        }
+        .login-brand h1 {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-bold);
+            letter-spacing: 1px;
+        }
+        .login-brand p {
+            color: var(--color-text-secondary);
+            font-size: var(--font-size-sm);
+            margin-top: var(--space-1);
+        }
+        .login-footer {
+            text-align: center;
+            margin-top: var(--space-6);
+            font-size: var(--font-size-xs);
+            color: var(--color-text-muted);
+        }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="login-brand">
+        <div class="login-brand-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+        <h1>M.I.N.D.S</h1>
+        <p>Memorandum Information and Notifications Distribution System</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% include "partials/form_errors.html" with form=form %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label" for="id_username">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}<div class="form-error">{{ form.username.errors|first }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="id_password">Password</label>
+            {{ form.password }}
+            {% if form.password.errors %}<div class="form-error">{{ form.password.errors|first }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary w-full">
+            <i class="fa-solid fa-right-to-bracket"></i> Sign In
+        </button>
+    </form>
+
+    <div class="login-footer">&copy; {% now "Y" %} M.I.N.D.S &mdash; All rights reserved.</div>
+</div>
+</body>
+</html>

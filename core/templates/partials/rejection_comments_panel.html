@@ -1,0 +1,22 @@
+{% if memo.status == "rejected" %}
+<div class="rejection-panel">
+    <div class="rejection-panel-header">
+        <i class="fa-solid fa-circle-exclamation" style="color:#dc2626;font-size:var(--font-size-lg);"></i>
+        <h4>This memorandum was rejected — please review the feedback below</h4>
+    </div>
+    <div class="rejection-panel-meta">
+        {% if memo.rejected_by %}<span><i class="fa-solid fa-user"></i> Rejected by {{ memo.rejected_by.get_full_name|default:memo.rejected_by.username }}</span>{% endif %}
+        {% if memo.rejected_at %}<span><i class="fa-regular fa-calendar"></i> {{ memo.rejected_at|date:"M d, Y \a\t H:i" }}</span>{% endif %}
+    </div>
+    {% if memo.rejection_comments %}
+    <div class="rejection-comments-text">{{ memo.rejection_comments }}</div>
+    {% endif %}
+    {% if can_edit %}
+    <div style="margin-top:var(--space-4);">
+        <a href="{% url 'memos:edit' memo.pk %}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-pen"></i> Edit &amp; Resubmit
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

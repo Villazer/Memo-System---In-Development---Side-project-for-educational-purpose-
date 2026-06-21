@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>My Profile</h1>
+        <p>Manage your personal information and account security.</p>
+    </div>
+</div>
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-user"></i> Personal Information</h3>
+        </div>
+        {% include "partials/form_errors.html" with form=profile_form %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="update_profile" value="1">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">First Name</label>
+                    {{ profile_form.first_name }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    {{ profile_form.last_name }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                {{ profile_form.email }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <input type="text" class="form-control" value="{{ user.get_role_display }}" disabled>
+                <p class="form-hint">Your role is managed by a Superadmin.</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <input type="text" class="form-control" value="{{ user.department.name|default:'Not assigned' }}" disabled>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-lock"></i> Change Password</h3>
+        </div>
+        {% include "partials/form_errors.html" with form=password_form %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="change_password" value="1">
+            <div class="form-group">
+                <label class="form-label">Current Password</label>
+                {{ password_form.current_password }}
+                {% if password_form.current_password.errors %}<div class="form-error">{{ password_form.current_password.errors|first }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                {{ password_form.new_password1 }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm New Password</label>
+                {{ password_form.new_password2 }}
+                {% if password_form.non_field_errors %}<div class="form-error">{{ password_form.non_field_errors|first }}</div>{% endif %}
+            </div>
+            <p class="form-hint">Password must be at least 8 characters.</p>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-secondary">
+                    <i class="fa-solid fa-key"></i> Update Password
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

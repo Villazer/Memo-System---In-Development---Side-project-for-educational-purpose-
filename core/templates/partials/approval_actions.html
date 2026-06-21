@@ -1,0 +1,72 @@
+{% if can_approve %}
+<div class="approval-actions-bar">
+    <div class="approval-actions-bar-info">
+        <span class="label">Awaiting your review</span>
+        <span class="value">
+            Submitted by {{ memo.created_by.get_full_name|default:memo.created_by.username }}
+            {% if memo.submitted_at %}&nbsp;&middot;&nbsp; {{ memo.submitted_at|timesince }} ago{% endif %}
+        </span>
+    </div>
+    <div class="approval-actions-bar-buttons">
+        <button class="btn btn-danger" data-modal-target="rejectModal">
+            <i class="fa-solid fa-xmark"></i> Reject
+        </button>
+        <form action="{% url 'memos:approve' memo.pk %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary"
+                    onclick="return confirm('Approve this memorandum? The creator will be notified.')">
+                <i class="fa-solid fa-check"></i> Approve
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-circle-exclamation"></i> Reject Memorandum</h3>
+            <button class="modal-close" data-modal-close="rejectModal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="{% url 'memos:reject' memo.pk %}" method="post" id="rejectionForm">
+            {% csrf_token %}
+            <div class="modal-body">
+                <p class="text-sm text-muted mb-4">
+                    Your comments will be shown to the memo creator so they can make corrections and resubmit.
+                </p>
+                <div class="form-group">
+                    <label class="form-label">Rejection Comments <span class="required">*</span></label>
+                    {{ rejection_form.rejection_comments }}
+                    <p class="form-hint">Minimum 10 characters. Be specific about what needs to change.</p>
+                    <div class="form-error hidden" id="rejectionError">Please provide rejection comments before submitting.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-modal-close="rejectModal">Cancel</button>
+                <button type="submit" class="btn btn-danger" id="rejectSubmitBtn">
+                    <i class="fa-solid fa-xmark"></i> Confirm Rejection
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function(){
+    const form = document.getElementById("rejectionForm");
+    const textarea = form ? form.querySelector("textarea") : null;
+    const errEl = document.getElementById("rejectionError");
+    const submitBtn = document.getElementById("rejectSubmitBtn");
+    if (submitBtn && textarea) {
+        submitBtn.addEventListener("click", function(e){
+            if(textarea.value.trim().length < 10){
+                e.preventDefault();
+                errEl.classList.remove("hidden");
+                textarea.focus();
+            } else { errEl.classList.add("hidden"); }
+        });
+        textarea.addEventListener("input", function(){
+            if(textarea.value.trim().length >= 10) errEl.classList.add("hidden");
+        });
+    }
+})();
+</script>
+{% endif %}

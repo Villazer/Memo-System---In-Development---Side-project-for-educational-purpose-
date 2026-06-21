@@ -1,0 +1,6 @@
+<div class="empty-state">
+    <i class="fa-solid fa-{{ icon|default:'inbox' }}"></i>
+    <h3>{{ title }}</h3>
+    <p>{{ message }}</p>
+    {% if action_url %}<a href="{{ action_url }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> {{ action_label|default:"Create" }}</a>{% endif %}
+</div>

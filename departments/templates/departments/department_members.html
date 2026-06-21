@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Manage Members — {{ department.name }}{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Manage Members</h1>
+        <p>Assign users to <strong>{{ department.name }}</strong>. Users already in another department will be flagged.</p>
+    </div>
+</div>
+
+<div class="grid grid-2" style="align-items:start;">
+
+    <!-- Assignment Form -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-user-plus"></i> Select Members</h3>
+            <span class="text-xs text-muted" id="selectionCount">0 selected</span>
+        </div>
+
+        <form method="post" id="membersForm">
+            {% csrf_token %}
+
+            <!-- Search filter -->
+            <div style="margin-bottom:var(--space-3);position:relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-text-muted);font-size:var(--font-size-xs);"></i>
+                <input type="text" id="memberSearch" placeholder="Search users..."
+                       class="form-control" style="padding-left:var(--space-8);">
+            </div>
+
+            <!-- Group toggles -->
+            <div class="flex gap-2 mb-3">
+                <button type="button" class="btn btn-secondary btn-sm" id="selectAllBtn">Select All</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="clearAllBtn">Clear All</button>
+            </div>
+
+            <div class="member-checkbox-list" id="memberList">
+                {% for user_obj in all_users %}
+                <label class="member-checkbox-item {% if user_obj.department and user_obj.department.pk != department.pk %}has-dept-conflict{% endif %}"
+                    data-name="{{ user_obj.get_full_name|lower }} {{ user_obj.username|lower }}">
+                    <input type="checkbox"
+                        name="users"
+                        value="{{ user_obj.pk }}"
+                        {% if user_obj.department and user_obj.department.pk == department.pk %}checked{% endif %}>
+
+                    <div class="member-item-info">
+                        <div class="member-item-name">
+                            {{ user_obj.get_full_name|default:user_obj.username }}
+                            <span class="text-xs text-muted">(@{{ user_obj.username }})</span>
+                        </div>
+
+                        <div class="member-item-dept">
+                            {% if user_obj.department %}
+                                {% if user_obj.department.pk == department.pk %}
+                                    <span style="color:var(--color-success);">
+                                        <i class="fa-solid fa-check"></i> This department
+                                    </span>
+                                {% else %}
+                                    <i class="fa-solid fa-building"></i> {{ user_obj.department.name }}
+                                {% endif %}
+                            {% else %}
+                                <span style="color:var(--color-text-muted);">No department</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if user_obj.department and user_obj.department.pk != department.pk %}
+                        <span class="dept-conflict-tag">Will move</span>
+                    {% endif %}
+
+                    <span class="badge badge-{% if user_obj.role == 'superadmin' %}priority-urgent{% elif user_obj.role == 'admin' %}priority-important{% else %}draft{% endif %}" style="flex-shrink:0;">
+                        {{ user_obj.get_role_display }}
+                    </span>
+                </label>
+                {% empty %}
+                <div class="empty-state" style="padding:var(--space-6);">
+                    <i class="fa-solid fa-users"></i>
+                    <p>No active users found.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if form.users.errors %}
+            <div class="form-error mt-2">{{ form.users.errors|first }}</div>
+            {% endif %}
+
+            <div class="alert alert-warning mt-4">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Users marked <strong>"Will move"</strong> currently belong to another department. Saving will transfer them to <strong>{{ department.name }}</strong>.</span>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'departments:detail' department.pk %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary" id="saveBtn">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Members
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Current Members Preview -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-users"></i> Current Members ({{ current_members.count }})</h3>
+        </div>
+        {% if current_members %}
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Name</th><th>Role</th><th>Department</th></tr></thead>
+                <tbody>
+                    {% for member in current_members %}
+                    <tr>
+                        <td data-label="Name">
+                            <div class="cell-title">
+                                <div class="user-avatar" style="width:26px;height:26px;font-size:0.6rem;">
+                                    {{ member.first_name|first|default:member.username|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="font-medium text-sm">{{ member.get_full_name|default:member.username }}</div>
+                                    <div class="text-xs text-muted">{{ member.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td data-label="Role">
+                            <span class="badge {% if member.role == 'superadmin' %}badge-priority-urgent{% elif member.role == 'admin' %}badge-priority-important{% else %}badge-draft{% endif %}">
+                                {{ member.get_role_display }}
+                            </span>
+                        </td>
+                        <td data-label="Department">
+                            <span style="color:var(--color-success);font-size:var(--font-size-xs);">
+                                <i class="fa-solid fa-check"></i> {{ department.name }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        {% include "partials/empty_state.html" with icon="user-slash" title="No members yet" message="Use the form to assign users." %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Conflict confirmation modal -->
+{% if show_conflict_modal %}
+<div class="modal-overlay active" id="conflictModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--color-warning);"></i> Department Transfer Warning</h3>
+        </div>
+        <div class="modal-body">
+            <p class="text-sm mb-4">The following users currently belong to <strong>another department</strong>. Saving will move them to <strong>{{ department.name }}</strong>:</p>
+            <ul style="margin:0 0 var(--space-4) var(--space-5);">
+                {% for u in conflicts %}
+                <li class="text-sm" style="margin-bottom:var(--space-1);">
+                    <strong>{{ u.get_full_name|default:u.username }}</strong>
+                    — currently in <span style="color:var(--color-warning);">{{ u.department.name }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="text-sm text-muted">They will be <strong>removed from their current department</strong> and placed into <strong>{{ department.name }}</strong>.</p>
+        </div>
+        <div class="modal-footer">
+            <a href="{% url 'departments:members' department.pk %}" class="btn btn-secondary">Cancel</a>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="confirmed" value="1">
+                {% for uid in selected_user_ids %}
+                <input type="hidden" name="confirmed_users" value="{{ uid }}">
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-check"></i> Confirm Transfer
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+(function(){
+    const list    = document.getElementById("memberList");
+    const search  = document.getElementById("memberSearch");
+    const countEl = document.getElementById("selectionCount");
+    const selAll  = document.getElementById("selectAllBtn");
+    const clrAll  = document.getElementById("clearAllBtn");
+    if(!list) return;
+
+    const items = list.querySelectorAll(".member-checkbox-item");
+
+    function updateCount(){
+        const n = list.querySelectorAll('input[type="checkbox"]:checked').length;
+        if(countEl) countEl.textContent = n + " selected";
+    }
+
+    items.forEach(item => {
+        const chk = item.querySelector('input[type="checkbox"]');
+        if(!chk) return;
+        item.classList.toggle("is-checked", chk.checked);
+        chk.addEventListener("change", () => {
+            item.classList.toggle("is-checked", chk.checked);
+            updateCount();
+        });
+    });
+
+    if(search){
+        search.addEventListener("input", () => {
+            const q = search.value.toLowerCase();
+            items.forEach(item => {
+                item.style.display = (item.dataset.name||"").includes(q) ? "" : "none";
+            });
+        });
+    }
+
+    if(selAll){
+        selAll.addEventListener("click", () => {
+            items.forEach(item => {
+                if(item.style.display === "none") return;
+                const chk = item.querySelector('input[type="checkbox"]');
+                if(chk){ chk.checked = true; item.classList.add("is-checked"); }
+            });
+            updateCount();
+        });
+    }
+    if(clrAll){
+        clrAll.addEventListener("click", () => {
+            items.forEach(item => {
+                const chk = item.querySelector('input[type="checkbox"]');
+                if(chk){ chk.checked = false; item.classList.remove("is-checked"); }
+            });
+            updateCount();
+        });
+    }
+
+    updateCount();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% with s=memo.status %}
+<div class="memo-stepper">
+    <div class="stepper-step {% if s == 'draft' %}active{% elif s != 'draft' %}completed{% endif %}">
+        <div class="stepper-node">
+            <div class="stepper-dot">
+                {% if s == 'draft' %}<i class="fa-solid fa-pen"></i>{% else %}<i class="fa-solid fa-check"></i>{% endif %}
+            </div>
+            <span class="stepper-label">Draft</span>
+        </div>
+    </div>
+    <div class="stepper-line {% if s != 'draft' %}{% if s == 'rejected' %}{% else %}completed{% endif %}{% endif %}"></div>
+    <div class="stepper-step {% if s == 'pending' %}active{% elif s == 'rejected' %}rejected{% elif s == 'approved' or s == 'sent' or s == 'archived' %}completed{% endif %}">
+        <div class="stepper-node">
+            <div class="stepper-dot">
+                {% if s == 'pending' %}<i class="fa-solid fa-clock"></i>
+                {% elif s == 'rejected' %}<i class="fa-solid fa-xmark"></i>
+                {% elif s == 'approved' or s == 'sent' or s == 'archived' %}<i class="fa-solid fa-check"></i>
+                {% else %}<i class="fa-solid fa-clock"></i>{% endif %}
+            </div>
+            <span class="stepper-label">{% if s == 'rejected' %}Rejected{% else %}Review{% endif %}</span>
+        </div>
+    </div>
+    <div class="stepper-line {% if s == 'approved' or s == 'sent' or s == 'archived' %}completed{% endif %}"></div>
+    <div class="stepper-step {% if s == 'approved' %}active{% elif s == 'sent' or s == 'archived' %}completed{% endif %}">
+        <div class="stepper-node">
+            <div class="stepper-dot">
+                {% if s == 'sent' or s == 'archived' %}<i class="fa-solid fa-check"></i>
+                {% else %}<i class="fa-solid fa-circle-check"></i>{% endif %}
+            </div>
+            <span class="stepper-label">Approved</span>
+        </div>
+    </div>
+    <div class="stepper-line {% if s == 'sent' or s == 'archived' %}completed{% endif %}"></div>
+    <div class="stepper-step {% if s == 'sent' %}active{% elif s == 'archived' %}completed{% endif %}">
+        <div class="stepper-node">
+            <div class="stepper-dot"><i class="fa-solid fa-paper-plane"></i></div>
+            <span class="stepper-label">Sent</span>
+        </div>
+    </div>
+</div>
+{% endwith %}

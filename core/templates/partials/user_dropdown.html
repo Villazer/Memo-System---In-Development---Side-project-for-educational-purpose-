@@ -1,0 +1,21 @@
+<div class="dropdown-panel hidden" id="userDropdown" style="width:220px;">
+    <div class="dropdown-body" style="max-height:none;">
+        <a href="{% url 'accounts:profile' %}" class="dropdown-item" style="border-bottom:1px solid var(--color-border);">
+            <div class="dropdown-item-icon"><i class="fa-solid fa-user"></i></div>
+            <div class="dropdown-item-content"><p>My Profile</p><span>View &amp; edit info</span></div>
+        </a>
+        {% if user.can_manage_departments %}
+        <a href="{% url 'settings_app:index' %}" class="dropdown-item" style="border-bottom:1px solid var(--color-border);">
+            <div class="dropdown-item-icon"><i class="fa-solid fa-gear"></i></div>
+            <div class="dropdown-item-content"><p>Settings</p><span>System configuration</span></div>
+        </a>
+        {% endif %}
+        <form action="{% url 'accounts:logout' %}" method="post" style="border:none;">
+            {% csrf_token %}
+            <button type="submit" class="dropdown-item" style="width:100%;border:none;background:none;text-align:left;">
+                <div class="dropdown-item-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
+                <div class="dropdown-item-content"><p>Logout</p><span>End your session</span></div>
+            </button>
+        </form>
+    </div>
+</div>

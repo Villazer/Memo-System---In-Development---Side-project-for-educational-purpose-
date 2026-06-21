@@ -1,0 +1,30 @@
+{% if approval_history %}
+<div class="card mt-6">
+    <div class="card-header">
+        <h3><i class="fa-solid fa-timeline"></i> Approval History</h3>
+    </div>
+    <div class="approval-timeline">
+        {% for entry in approval_history %}
+        <div class="timeline-item">
+            <div class="timeline-dot {{ entry.action }}">
+                {% if entry.action == "submitted" or entry.action == "resubmitted" %}<i class="fa-solid fa-upload"></i>
+                {% elif entry.action == "approved" %}<i class="fa-solid fa-check"></i>
+                {% elif entry.action == "rejected" %}<i class="fa-solid fa-xmark"></i>{% endif %}
+            </div>
+            <div class="timeline-content">
+                <div class="timeline-header">
+                    <span class="timeline-action">{{ entry.get_action_display }}</span>
+                    <span class="timeline-time">{{ entry.created_at|date:"M d, Y H:i" }}</span>
+                </div>
+                {% if entry.actor %}
+                <div class="timeline-actor">by {{ entry.actor.get_full_name|default:entry.actor.username }} &nbsp;&middot;&nbsp; {{ entry.actor.get_role_display }}</div>
+                {% endif %}
+                {% if entry.comments %}
+                <div class="timeline-comments">{{ entry.comments }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

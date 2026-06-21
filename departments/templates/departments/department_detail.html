@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ department.name }}{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="flex items-center gap-3 mb-2"><span class="badge badge-draft">{{ department.code }}</span></div>
+        <h1>{{ department.name }}</h1>
+        {% if department.description %}<p>{{ department.description }}</p>{% endif %}
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'departments:members' department.pk %}" class="btn btn-secondary"><i class="fa-solid fa-user-gear"></i> Manage Members</a>
+        <a href="{% url 'departments:edit' department.pk %}" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Edit</a>
+    </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);max-width:640px;margin-bottom:var(--space-6);">
+    {% include "partials/stats_card.html" with label="Members" value=member_count icon="users" color="primary" %}
+    {% include "partials/stats_card.html" with label="Total Memos" value=memo_count icon="envelope" color="info" %}
+    {% include "partials/stats_card.html" with label="Sent Memos" value=sent_memo_count icon="paper-plane" color="success" %}
+</div>
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-users"></i> Members</h3>
+            <a href="{% url 'departments:members' department.pk %}" class="dropdown-link">Manage</a>
+        </div>
+        {% if members %}
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td data-label="Name">
+                            <div class="cell-title">
+                                <div class="user-avatar" style="width:28px;height:28px;font-size:var(--font-size-xs);">{{ member.first_name|first|default:member.username|first|upper }}</div>
+                                <div><div class="font-medium">{{ member.get_full_name|default:member.username }}</div><div class="text-xs text-muted">{{ member.email }}</div></div>
+                            </div>
+                        </td>
+                        <td data-label="Role">
+                            <span class="badge {% if member.role == 'superadmin' %}badge-priority-urgent{% elif member.role == 'admin' %}badge-priority-important{% else %}badge-draft{% endif %}">{{ member.get_role_display }}</span>
+                        </td>
+                        <td data-label="Status">
+                            {% if member.is_active %}<span class="badge badge-sent">Active</span>{% else %}<span class="badge badge-archived">Inactive</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            {% include "partials/empty_state.html" with icon="user-slash" title="No members" message="No users assigned to this department yet." %}
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-header"><h3><i class="fa-solid fa-envelope"></i> Recent Memos</h3></div>
+        {% if recent_memos %}
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Title</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for memo in recent_memos %}
+                    <tr>
+                        <td data-label="Title"><a href="{% url 'memos:detail' memo.pk %}" class="font-medium truncate" style="max-width:180px;display:block;color:var(--color-primary);">{{ memo.title }}</a></td>
+                        <td data-label="Status"><span class="badge badge-{{ memo.status }}">{{ memo.get_status_display }}</span></td>
+                        <td data-label="Date">{{ memo.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            {% include "partials/empty_state.html" with icon="envelope-open" title="No memos yet" message="No memorandums created for this department." %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
