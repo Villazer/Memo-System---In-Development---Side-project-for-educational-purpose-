@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}System Settings{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><h1>System Settings</h1><p>Configure M.I.N.D.S system-wide preferences and behavior.</p></div>
+</div>
+<div class="grid grid-2" style="align-items:start;">
+    <div>
+        <div class="card mb-4">
+            <div class="card-header"><h3><i class="fa-solid fa-building"></i> Organization &amp; Behavior</h3></div>
+            {% include "partials/form_errors.html" with form=form %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">{{ form.org_name.label }} <span class="required">*</span></label>
+                    {{ form.org_name }}
+                    <p class="form-hint">{{ form.org_name.help_text }}</p>
+                    {% if form.org_name.errors %}<div class="form-error">{{ form.org_name.errors|first }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ form.org_tagline.label }}</label>
+                    {{ form.org_tagline }}
+                    <p class="form-hint">{{ form.org_tagline.help_text }}</p>
+                </div>
+                <hr class="divider">
+                <div class="form-group">
+                    <label class="form-label">{{ form.archive_threshold_days.label }} <span class="required">*</span></label>
+                    {{ form.archive_threshold_days }}
+                    <p class="form-hint">{{ form.archive_threshold_days.help_text }}</p>
+                    {% if form.archive_threshold_days.errors %}<div class="form-error">{{ form.archive_threshold_days.errors|first }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ form.memos_per_page.label }} <span class="required">*</span></label>
+                    {{ form.memos_per_page }}
+                    <p class="form-hint">{{ form.memos_per_page.help_text }}</p>
+                </div>
+                <div class="form-group flex items-center gap-3">
+                    {{ form.allow_staff_to_view_sender }}
+                    <label class="form-label" style="margin:0;">{{ form.allow_staff_to_view_sender.label }}</label>
+                </div>
+                <p class="form-hint">{{ form.allow_staff_to_view_sender.help_text }}</p>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
+                </div>
+            </form>
+        </div>
+        <div class="card" style="border-color:var(--color-danger);">
+            <div class="card-header"><h3 style="color:var(--color-danger);"><i class="fa-solid fa-triangle-exclamation"></i> Maintenance</h3></div>
+            <div class="flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <div><div class="font-semibold text-sm">Run Auto-Archive</div><div class="text-xs text-muted mt-1">Immediately archive all memos older than the threshold.</div></div>
+                    <button class="btn btn-secondary btn-sm" data-modal-target="archiveNowModal"><i class="fa-solid fa-box-archive"></i> Run Now</button>
+                </div>
+                <hr class="divider" style="margin:0;">
+                <div class="flex items-center justify-between">
+                    <div><div class="font-semibold text-sm">Clear Read Notifications</div><div class="text-xs text-muted mt-1">Delete all read notifications to free up space.</div></div>
+                    <button class="btn btn-secondary btn-sm" data-modal-target="clearNotifsModal"><i class="fa-solid fa-bell-slash"></i> Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3><i class="fa-solid fa-circle-info"></i> System Information</h3></div>
+        <table class="data-table">
+            <tbody>
+                <tr><td class="text-muted font-medium" style="width:55%;">Total Users</td><td><span class="badge badge-draft">{{ total_users }}</span></td></tr>
+                <tr><td class="text-muted font-medium">Active Users</td><td><span class="badge badge-sent">{{ active_users }}</span></td></tr>
+                <tr><td class="text-muted font-medium">Total Departments</td><td><span class="badge badge-draft">{{ total_departments }}</span></td></tr>
+                <tr><td class="text-muted font-medium">Total Memorandums</td><td><span class="badge badge-draft">{{ total_memos }}</span></td></tr>
+                <tr><td class="text-muted font-medium">Total Notifications</td><td><span class="badge badge-draft">{{ total_notifications }}</span></td></tr>
+            </tbody>
+        </table>
+        <hr class="divider">
+        <div class="card-header" style="padding:0 0 var(--space-4) 0;"><h3><i class="fa-solid fa-sliders"></i> Current Settings</h3></div>
+        <table class="data-table">
+            <tbody>
+                {% for key, val in current_settings.items %}
+                <tr>
+                    <td class="text-muted font-medium" style="width:60%;text-transform:capitalize;">{{ key }}</td>
+                    <td class="font-semibold text-sm">{{ val }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr class="divider">
+        <div class="card-header" style="padding:0 0 var(--space-4) 0;"><h3><i class="fa-solid fa-terminal"></i> Management Commands</h3></div>
+        <div class="alert alert-info" style="font-size:var(--font-size-xs);font-family:monospace;">python manage.py archive_old_memos</div>
+        <p class="text-xs text-muted mb-3">Run daily via cron to auto-archive old memos.</p>
+        <div class="alert alert-info" style="font-size:var(--font-size-xs);font-family:monospace;">python manage.py seed_settings</div>
+        <p class="text-xs text-muted">Seed default system settings into the database.</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="archiveNowModal">
+    <div class="modal">
+        <div class="modal-header"><h3>Run Auto-Archive</h3><button class="modal-close" data-modal-close="archiveNowModal"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="modal-body"><p>This will immediately archive all memorandums older than the configured threshold. This cannot be undone.</p></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-modal-close="archiveNowModal">Cancel</button>
+            <button class="btn btn-danger" onclick="alert('Run: python manage.py archive_old_memos');this.closest('.modal-overlay').classList.remove('active');">Understood</button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="clearNotifsModal">
+    <div class="modal">
+        <div class="modal-header"><h3>Clear Read Notifications</h3><button class="modal-close" data-modal-close="clearNotifsModal"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="modal-body"><p>This will permanently delete all read notifications. Unread notifications will not be affected.</p></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-modal-close="clearNotifsModal">Cancel</button>
+            <button class="btn btn-danger" onclick="alert('Feature coming soon.');this.closest('.modal-overlay').classList.remove('active');">Understood</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ target_user.get_full_name|default:target_user.username }}{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="flex items-center gap-4">
+        <div class="user-avatar" style="width:56px;height:56px;font-size:var(--font-size-lg);">{{ target_user.first_name|first|default:target_user.username|first|upper }}</div>
+        <div>
+            <h1>{{ target_user.get_full_name|default:target_user.username }}</h1>
+            <div class="flex items-center gap-3 mt-1">
+                <span class="badge {% if target_user.role == 'superadmin' %}badge-priority-urgent{% elif target_user.role == 'admin' %}badge-priority-important{% else %}badge-draft{% endif %}">{{ target_user.get_role_display }}</span>
+                {% if target_user.is_active %}<span class="badge badge-sent">Active</span>{% else %}<span class="badge badge-archived">Inactive</span>{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="page-header-actions">
+        <a href="{% url 'users:reset_password' target_user.pk %}" class="btn btn-secondary"><i class="fa-solid fa-key"></i> Reset Password</a>
+        {% if target_user != request.user %}
+        <form method="post" action="{% url 'users:toggle_active' target_user.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn {% if target_user.is_active %}btn-danger{% else %}btn-secondary{% endif %}" onclick="return confirm('{% if target_user.is_active %}Deactivate{% else %}Activate{% endif %} this user?')">
+                {% if target_user.is_active %}<i class="fa-solid fa-user-slash"></i> Deactivate{% else %}<i class="fa-solid fa-user-check"></i> Activate{% endif %}
+            </button>
+        </form>
+        {% endif %}
+        <a href="{% url 'users:edit' target_user.pk %}" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Edit</a>
+    </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);max-width:640px;margin-bottom:var(--space-6);">
+    {% include "partials/stats_card.html" with label="Memos Received" value=total_received icon="inbox" color="primary" %}
+    {% include "partials/stats_card.html" with label="Memos Read" value=total_read icon="envelope-open" color="success" %}
+    {% include "partials/stats_card.html" with label="Read Rate" value=read_rate|stringformat:"s"|add:"%" icon="chart-pie" color="info" %}
+</div>
+<div class="grid grid-2" style="align-items:start;">
+    <div class="card">
+        <div class="card-header"><h3><i class="fa-solid fa-id-card"></i> Profile Information</h3><a href="{% url 'users:edit' target_user.pk %}" class="dropdown-link">Edit</a></div>
+        <table class="data-table">
+            <tbody>
+                <tr><td class="text-muted font-medium" style="width:40%;">Username</td><td>@{{ target_user.username }}</td></tr>
+                <tr><td class="text-muted font-medium">Full Name</td><td>{{ target_user.get_full_name|default:"—" }}</td></tr>
+                <tr><td class="text-muted font-medium">Email</td><td>{{ target_user.email|default:"—" }}</td></tr>
+                <tr><td class="text-muted font-medium">Role</td><td><span class="badge {% if target_user.role == 'superadmin' %}badge-priority-urgent{% elif target_user.role == 'admin' %}badge-priority-important{% else %}badge-draft{% endif %}">{{ target_user.get_role_display }}</span></td></tr>
+                <tr><td class="text-muted font-medium">Department</td><td>{{ target_user.department.name|default:"Not assigned" }}</td></tr>
+                <tr><td class="text-muted font-medium">Date Joined</td><td>{{ target_user.date_joined|date:"M d, Y" }}</td></tr>
+                <tr><td class="text-muted font-medium">Last Login</td><td>{{ target_user.last_login|date:"M d, Y H:i"|default:"Never" }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3><i class="fa-solid fa-inbox"></i> Recent Received Memos</h3></div>
+        {% if recent_received %}
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Memo</th><th>Status</th><th>Read At</th></tr></thead>
+                <tbody>
+                    {% for rec in recent_received %}
+                    <tr {% if not rec.is_read %}class="row-unread"{% endif %}>
+                        <td data-label="Memo"><a href="{% url 'memos:detail' rec.memo.pk %}" class="font-medium truncate" style="max-width:180px;display:block;color:var(--color-primary);">{{ rec.memo.title }}</a></td>
+                        <td data-label="Status">{% if rec.is_read %}<span class="badge badge-sent"><i class="fa-solid fa-check"></i> Read</span>{% else %}<span class="badge badge-draft">Unread</span>{% endif %}</td>
+                        <td data-label="Read At">{{ rec.read_at|date:"M d, Y H:i"|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            {% include "partials/empty_state.html" with icon="inbox" title="No memos received" message="This user has not received any memorandums yet." %}
+        {% endif %}
+    </div>
+    {% if target_user.can_create_memos %}
+    <div class="card" style="grid-column:span 2;">
+        <div class="card-header"><h3><i class="fa-solid fa-envelope"></i> Recently Created Memos</h3></div>
+        {% if created_memos %}
+        <div class="table-wrapper" style="border:none;">
+            <table class="data-table">
+                <thead><tr><th>Title</th><th>Status</th><th>Priority</th><th>Read Rate</th><th>Created</th></tr></thead>
+                <tbody>
+                    {% for memo in created_memos %}
+                    <tr>
+                        <td data-label="Title"><a href="{% url 'memos:detail' memo.pk %}" class="font-medium" style="color:var(--color-primary);">{{ memo.title }}</a></td>
+                        <td data-label="Status"><span class="badge badge-{{ memo.status }}">{{ memo.get_status_display }}</span></td>
+                        <td data-label="Priority"><span class="badge badge-priority-{{ memo.priority }}">{{ memo.get_priority_display }}</span></td>
+                        <td data-label="Read Rate">
+                            {% if memo.status == "sent" %}
+                            <div class="flex items-center gap-2">
+                                <div class="progress-bar" style="width:80px;"><div class="progress-bar-fill" style="width:{{ memo.read_rate }}%;"></div></div>
+                                <span class="text-xs text-muted">{{ memo.read_rate }}%</span>
+                            </div>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td data-label="Created">{{ memo.created_at|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            {% include "partials/empty_state.html" with icon="envelope-open" title="No memos created" message="This user has not created any memorandums yet." %}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

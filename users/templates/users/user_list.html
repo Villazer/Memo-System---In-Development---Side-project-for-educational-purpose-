@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}User Management{% endblock %}
+{% block breadcrumb %}{% include "partials/breadcrumb.html" %}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div><h1>User Management</h1><p>Manage system users, roles, and department assignments.</p></div>
+    <div class="page-header-actions">
+        <a href="{% url 'users:create' %}" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Add User</a>
+    </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);max-width:640px;margin-bottom:var(--space-6);">
+    {% include "partials/stats_card.html" with label="Total Users" value=total_users icon="users" color="primary" %}
+    {% include "partials/stats_card.html" with label="Active" value=active_users icon="user-check" color="success" %}
+    {% include "partials/stats_card.html" with label="Inactive" value=inactive_users icon="user-xmark" color="danger" %}
+</div>
+<div class="card mb-4">
+    <form method="get" class="flex flex-wrap items-center gap-3">
+        <div style="flex:2;min-width:200px;">{{ filter_form.q }}</div>
+        <div style="flex:1;min-width:140px;">{{ filter_form.role }}</div>
+        <div style="flex:1;min-width:160px;">{{ filter_form.department }}</div>
+        <div style="flex:1;min-width:140px;">{{ filter_form.status }}</div>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-filter"></i> Filter</button>
+        {% if request.GET %}<a href="{% url 'users:list' %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-xmark"></i> Clear</a>{% endif %}
+    </form>
+</div>
+<div class="table-wrapper">
+    {% if users %}
+    <table class="data-table">
+        <thead>
+            <tr><th>User</th><th>Role</th><th>Department</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td data-label="User">
+                    <div class="cell-title">
+                        <div class="user-avatar">{{ u.first_name|first|default:u.username|first|upper }}</div>
+                        <div>
+                            <div class="font-semibold">{{ u.get_full_name|default:u.username }}</div>
+                            <div class="text-xs text-muted">{{ u.email|default:"No email" }}</div>
+                            <div class="text-xs text-muted">@{{ u.username }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td data-label="Role">
+                    <span class="badge {% if u.role == 'superadmin' %}badge-priority-urgent{% elif u.role == 'admin' %}badge-priority-important{% else %}badge-draft{% endif %}">{{ u.get_role_display }}</span>
+                </td>
+                <td data-label="Department">
+                    {% if u.department %}<span class="badge badge-draft">{{ u.department.code }}</span> {{ u.department.name }}
+                    {% else %}<span class="text-muted">—</span>{% endif %}
+                </td>
+                <td data-label="Status">
+                    {% if u.is_active %}<span class="badge badge-sent"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Active</span>
+                    {% else %}<span class="badge badge-archived"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Inactive</span>{% endif %}
+                </td>
+                <td data-label="Joined">{{ u.date_joined|date:"M d, Y" }}</td>
+                <td data-label="Actions">
+                    <div class="flex items-center gap-1">
+                        <a href="{% url 'users:detail' u.pk %}" class="btn btn-ghost btn-sm btn-icon" title="View"><i class="fa-solid fa-eye"></i></a>
+                        <a href="{% url 'users:edit' u.pk %}" class="btn btn-ghost btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                        <a href="{% url 'users:reset_password' u.pk %}" class="btn btn-ghost btn-sm btn-icon" title="Reset Password"><i class="fa-solid fa-key"></i></a>
+                        {% if u != request.user %}
+                        <form method="post" action="{% url 'users:toggle_active' u.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-ghost btn-sm btn-icon" title="{% if u.is_active %}Deactivate{% else %}Activate{% endif %}" onclick="return confirm('{% if u.is_active %}Deactivate{% else %}Activate{% endif %} this user?')">
+                                {% if u.is_active %}<i class="fa-solid fa-user-slash" style="color:var(--color-danger);"></i>
+                                {% else %}<i class="fa-solid fa-user-check" style="color:var(--color-success);"></i>{% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% include "partials/pagination.html" with page_obj=page_obj %}
+    {% else %}
+        {% include "partials/empty_state.html" with icon="users" title="No users found" message="Try adjusting your filters or add a new user." action_url="/users/create/" action_label="Add User" %}
+    {% endif %}
+</div>
+{% endblock %}
