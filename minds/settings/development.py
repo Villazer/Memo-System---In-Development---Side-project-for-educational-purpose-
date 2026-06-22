@@ -17,5 +17,14 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # XFrameOptionsMiddleware intentionally omitted in development so the app
+    # can be embedded in the v0 / Vercel preview iframe.
+]
+
+# Allow the app to be embedded in the preview iframe (CSRF needs trusted origins).
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.vercel.app",
+    "https://*.v0.app",
+    "https://*.v0.dev",
+    "https://*.vusercontent.net",
 ]
