@@ -489,3 +489,40 @@ textarea.form-control{min-height:160px;resize:vertical}
   0%,100% { opacity: 1; }
   50%      { opacity: 0.3; }
 }
+
+/* ============================================
+   M.I.N.D.S — Dark Mode Overrides
+   These remap the hardcoded light tints above so they read
+   correctly on dark surfaces. Light mode is unaffected.
+   ============================================ */
+html[data-theme="dark"] .badge-pending  { background:rgba(217,119,6,.18); color:#fbbf6b; }
+html[data-theme="dark"] .badge-rejected { background:rgba(220,38,38,.18); color:#f6a3a3; }
+html[data-theme="dark"] .badge-approved { background:rgba(37,99,235,.20); color:#9cc0ff; }
+html[data-theme="dark"] .badge-archived,
+html[data-theme="dark"] .badge-priority-normal { background:rgba(148,163,184,.16); color:#cbd5e1; }
+
+html[data-theme="dark"] .status-banner.pending  { background:rgba(217,119,6,.13); border-color:rgba(217,119,6,.35); color:#fcd9a0; }
+html[data-theme="dark"] .status-banner.rejected { background:rgba(220,38,38,.13); border-color:rgba(220,38,38,.35); color:#f7b4b4; }
+html[data-theme="dark"] .status-banner.approved { background:rgba(37,99,235,.14); border-color:rgba(37,99,235,.4);  color:#b6cfff; }
+html[data-theme="dark"] .status-banner.sent     { background:rgba(22,163,74,.14); border-color:rgba(22,163,74,.4);  color:#a7e3bd; }
+
+html[data-theme="dark"] .rejection-panel { background:rgba(220,38,38,.10); border-color:rgba(220,38,38,.3); }
+html[data-theme="dark"] .rejection-panel-header { border-bottom-color:rgba(220,38,38,.3); }
+html[data-theme="dark"] .rejection-panel-header h4 { color:#f7b4b4; }
+html[data-theme="dark"] .rejection-panel-meta { color:#f0a3a3; }
+html[data-theme="dark"] .rejection-comments-text { background:rgba(220,38,38,.08); border-color:rgba(220,38,38,.3); color:#f3c2c2; }
+
+html[data-theme="dark"] .data-table tbody tr.row-unread:hover,
+html[data-theme="dark"] .notification-unread:hover { background:rgba(99,102,241,.22); }
+
+html[data-theme="dark"] .member-checkbox-item.has-dept-conflict { background:rgba(217,119,6,.13); border-color:rgba(217,119,6,.35); }
+html[data-theme="dark"] .dept-conflict-tag { background:rgba(217,119,6,.32); color:#fcd9a0; }
+
+html[data-theme="dark"] .attachment-preview img { background:#0b1120; }
+
+html[data-theme="dark"] .alert-error   { border-color:rgba(220,38,38,.4); }
+html[data-theme="dark"] .alert-success { border-color:rgba(22,163,74,.4); }
+html[data-theme="dark"] .alert-warning { border-color:rgba(217,119,6,.4); }
+html[data-theme="dark"] .alert-info    { border-color:rgba(2,132,199,.4); }
+
+html[data-theme="dark"] .status-tab:not(.active-tab) .status-tab-count { background:rgba(148,163,184,.2); color:var(--color-text-secondary); }

@@ -4,8 +4,11 @@ set -e
 
 export DJANGO_SETTINGS_MODULE="minds.settings.production"
 
-python3 -m pip install --upgrade pip
-python3 -m pip install -r requirements.txt
+# The static-build runs in a uv/PEP 668 "externally managed" Python env, so we
+# must allow pip to install into it. These installs are only used to run
+# collectstatic during the build; the WSGI function installs its own deps.
+python3 -m pip install --break-system-packages --upgrade pip
+python3 -m pip install --break-system-packages -r requirements.txt
 
 # Collect static files into STATIC_ROOT (staticfiles/), which Vercel serves
 # via the route defined in vercel.json.
