@@ -1,5 +1,29 @@
 document.addEventListener("DOMContentLoaded", function () {
 
+    // ── Theme toggle (light / dark) ─────────────────────────────────────
+    const THEME_KEY   = "minds_theme";
+    const themeToggle = document.getElementById("themeToggle");
+
+    function currentTheme() {
+        return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    }
+    function syncThemeIcon(theme) {
+        if (!themeToggle) return;
+        const icon = themeToggle.querySelector("i");
+        if (icon) icon.className = theme === "dark" ? "fa-solid fa-sun" : "fa-solid fa-moon";
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", theme === "dark" ? "#0a1020" : "#0f172a");
+    }
+    syncThemeIcon(currentTheme());
+    if (themeToggle) {
+        themeToggle.addEventListener("click", function () {
+            const next = currentTheme() === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", next);
+            try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+            syncThemeIcon(next);
+        });
+    }
+
     // ── Sidebar toggle ──────────────────────────────────────────────────
     const appShell     = document.getElementById("app-shell");
     const sidebarToggle = document.getElementById("sidebarToggle");

@@ -4,7 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
     <title>Login | M.I.N.D.S</title>
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem("minds_theme");
+                if (!t) t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+                document.documentElement.setAttribute("data-theme", t);
+            } catch (e) {}
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -63,9 +73,32 @@
             font-size: var(--font-size-xs);
             color: var(--color-text-muted);
         }
+        .login-theme-toggle {
+            position: fixed;
+            top: var(--space-5);
+            right: var(--space-5);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255,255,255,.15);
+            background: rgba(255,255,255,.08);
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-md);
+            transition: background var(--transition-speed), transform var(--transition-speed);
+        }
+        .login-theme-toggle:hover { background: rgba(255,255,255,.16); }
+        .login-theme-toggle i { transition: transform .45s cubic-bezier(.4,0,.2,1); }
+        .login-theme-toggle:hover i { transform: rotate(35deg); }
+        .login-card { animation: mindsFadeUp .35s ease both; }
     </style>
 </head>
 <body>
+<button class="login-theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme">
+    <i class="fa-solid fa-moon"></i>
+</button>
 <div class="login-card">
     <div class="login-brand">
         <div class="login-brand-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
@@ -103,5 +136,24 @@
 
     <div class="login-footer">&copy; {% now "Y" %} M.I.N.D.S &mdash; All rights reserved.</div>
 </div>
+<script>
+    (function () {
+        var toggle = document.getElementById("themeToggle");
+        function cur() { return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light"; }
+        function syncIcon(theme) {
+            var icon = toggle && toggle.querySelector("i");
+            if (icon) icon.className = theme === "dark" ? "fa-solid fa-sun" : "fa-solid fa-moon";
+        }
+        syncIcon(cur());
+        if (toggle) {
+            toggle.addEventListener("click", function () {
+                var next = cur() === "dark" ? "light" : "dark";
+                document.documentElement.setAttribute("data-theme", next);
+                try { localStorage.setItem("minds_theme", next); } catch (e) {}
+                syncIcon(next);
+            });
+        }
+    })();
+</script>
 </body>
 </html>

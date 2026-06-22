@@ -90,3 +90,75 @@ input,textarea,select{font-family:inherit;font-size:inherit}
     z-index: 99;
 }
 .sidebar-open .sidebar-backdrop { display: block; }
+
+/* ============================================
+   M.I.N.D.S — Theming (Light / Dark) + Motion
+   ============================================ */
+
+html { color-scheme: light; }
+html[data-theme="dark"] { color-scheme: dark; }
+
+/* Dark theme tokens — indigo primary stays; surfaces/text invert.
+   The sidebar remains dark in both modes (per design constraint). */
+html[data-theme="dark"] {
+  --color-primary-light: rgba(99,102,241,.16);
+  --color-bg: #0b1120;
+  --color-card: #131c2e;
+  --color-border: #243049;
+  --color-text-primary: #e8edf6;
+  --color-text-secondary: #9aa7bd;
+  --color-text-muted: #6b7891;
+  --color-sidebar-bg: #0a1020;
+  --color-sidebar-text: #cbd5e1;
+  --color-sidebar-hover: #1b2540;
+  --color-success-bg: rgba(22,163,74,.15);
+  --color-warning-bg: rgba(217,119,6,.15);
+  --color-danger-bg: rgba(220,38,38,.16);
+  --color-info-bg: rgba(2,132,199,.15);
+  --color-unread-bg: rgba(99,102,241,.13);
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,.4);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.45),0 2px 4px -2px rgba(0,0,0,.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.5),0 4px 6px -4px rgba(0,0,0,.4);
+}
+
+/* Smooth surface transitions when toggling themes */
+body, .topbar, .card, .stat-card, .table-wrapper, .data-table thead th,
+.data-table tbody td, .form-control, .dropdown-panel, .modal, .sidebar,
+.recipient-panel, .attachment-preview, .timeline-content, .search-bar input,
+.pagination a, .pagination span, .btn-secondary {
+  transition: background-color var(--transition-speed) ease,
+              border-color var(--transition-speed) ease,
+              color var(--transition-speed) ease;
+}
+
+/* Give the dark sidebar a subtle edge so it separates from the dark canvas */
+html[data-theme="dark"] .sidebar { border-right: 1px solid rgba(255,255,255,.05); }
+
+/* Entrance animation for page content */
+@keyframes mindsFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.page-content { animation: mindsFadeUp .3s ease both; }
+
+/* Modern hover micro-interactions */
+.stat-card, .card {
+  transition: background-color var(--transition-speed) ease,
+              border-color var(--transition-speed) ease,
+              transform var(--transition-speed) ease,
+              box-shadow var(--transition-speed) ease;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.btn { transition: background var(--transition-speed), border-color var(--transition-speed),
+                   color var(--transition-speed), transform var(--transition-speed),
+                   box-shadow var(--transition-speed); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn:active { transform: translateY(0); }
+
+/* Theme toggle icon spin */
+.theme-toggle i { transition: transform .45s cubic-bezier(.4,0,.2,1); }
+.theme-toggle:hover i { transform: rotate(35deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
