@@ -5,10 +5,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const sidebarToggle = document.getElementById("sidebarToggle");
     const COLLAPSED_KEY = "sidebar_collapsed";
 
-    // Restore collapsed state on every page load
-    if (localStorage.getItem(COLLAPSED_KEY) === "1" && window.innerWidth > 1024) {
-        appShell.classList.add("sidebar-collapsed");
-    }
+    // Note: the collapsed state is restored by an inline pre-paint script in
+    // base.html so that navigating between pages does not re-animate the
+    // minimize transition. The toggle handler below only persists changes.
 
     // Inject backdrop for mobile if not present
     if (!document.getElementById("sidebarBackdrop")) {

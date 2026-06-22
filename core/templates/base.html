@@ -15,6 +15,17 @@
 </head>
 <body>
 <div class="app-shell" id="app-shell">
+    <script>
+        // Apply the saved collapsed state synchronously, before first paint,
+        // so navigating between pages does not re-animate the minimize transition.
+        (function () {
+            try {
+                if (localStorage.getItem("sidebar_collapsed") === "1" && window.innerWidth > 1024) {
+                    document.getElementById("app-shell").classList.add("sidebar-collapsed");
+                }
+            } catch (e) {}
+        })();
+    </script>
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     {% include "partials/sidebar.html" %}
     <div class="main-content">
