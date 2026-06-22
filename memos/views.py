@@ -314,12 +314,41 @@ class MemoDetailView(LoginRequiredMixin, DetailView):
                 memo.recipients.select_related("recipient").order_by("-read_at")
                 if user.can_send_directly() else []
             ),
-            "send_form_users": (
-                user.department.members.filter(is_active=True).order_by("first_name")
-                if user.department else []
-            ),
+            "send_form_departments": self._send_form_departments(user),
+            "send_form_users": self._send_form_users(user),
+            "memo_department_ids": set(memo.departments.values_list("pk", flat=True)),
         })
         return ctx
+
+    @staticmethod
+    def _send_form_departments(user):
+        """Departments an approver may target when sending.
+
+        Admins are scoped to their own department; superadmins see all.
+        """
+        from departments.models import Department
+        if user.is_superadmin:
+            return Department.objects.all().order_by("name")
+        if user.is_admin and user.department_id:
+            return Department.objects.filter(pk=user.department_id)
+        return Department.objects.none()
+
+    @staticmethod
+    def _send_form_users(user):
+        """Employees an approver may pick individually when sending.
+
+        Admins only see active members of their own department; superadmins
+        see every active user.
+        """
+        from accounts.models import User as UserModel
+        qs = UserModel.objects.filter(is_active=True).select_related("department")
+        if user.is_superadmin:
+            return qs.order_by("first_name", "last_name")
+        if user.is_admin and user.department_id:
+            return qs.filter(department_id=user.department_id).order_by(
+                "first_name", "last_name"
+            )
+        return UserModel.objects.none()
 
     def _back_url(self):
         memo = self.object
@@ -369,11 +398,34 @@ class MemoSendView(LoginRequiredMixin, AdminOrSuperadminRequiredMixin, View):
         if not memo.can_be_sent_by(request.user):
             messages.error(request, "This memorandum cannot be sent.")
             return redirect("memos:detail", pk=pk)
+
         from accounts.models import User as UserModel
+        from departments.models import Department
+        user = request.user
+
+        # Departments the approver is allowed to target (admins = own dept only).
+        allowed_departments = MemoDetailView._send_form_departments(user)
+        dept_ids = request.POST.getlist("target_departments")
+        selected_departments = list(
+            allowed_departments.filter(pk__in=dept_ids)
+        ) if dept_ids else []
+        if selected_departments:
+            memo.departments.set(selected_departments)
+
+        # Individual employees, scoped to who the approver may send to.
+        allowed_users = MemoDetailView._send_form_users(user)
         recipient_ids = request.POST.getlist("individual_recipients")
         individual_recipients = list(
-            UserModel.objects.filter(pk__in=recipient_ids, is_active=True)
+            allowed_users.filter(pk__in=recipient_ids)
         ) if recipient_ids else []
+
+        if not memo.departments.exists() and not individual_recipients:
+            messages.error(
+                request,
+                "Select at least one department or employee before sending.",
+            )
+            return redirect("memos:detail", pk=pk)
+
         memo.mark_sent(individual_recipients=individual_recipients)
         messages.success(request, f"Memorandum sent to {memo.total_recipients} recipient(s).")
         return redirect("memos:sent")

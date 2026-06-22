@@ -17,16 +17,20 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, var(--color-sidebar-bg) 0%, #1e293b 100%);
+            background:
+                radial-gradient(900px 500px at 50% -10%, rgba(99,102,241,.35) 0%, rgba(99,102,241,0) 60%),
+                linear-gradient(135deg, #111c33 0%, #0f172a 55%, #1e293b 100%);
             padding: var(--space-4);
         }
         .login-card {
             width: 420px;
             max-width: 100%;
-            background: var(--color-card);
+            background: var(--gradient-surface, var(--color-card));
+            border: 1px solid rgba(255,255,255,.06);
             border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-lg), 0 0 0 1px rgba(99,102,241,.06);
             padding: var(--space-8);
+            animation: mindsScaleIn .35s ease both;
         }
         .login-brand {
             display: flex;
@@ -39,13 +43,14 @@
             width: 56px;
             height: 56px;
             border-radius: var(--radius-lg);
-            background: var(--color-primary);
+            background: var(--gradient-primary, var(--color-primary));
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: var(--font-size-xl);
             margin-bottom: var(--space-4);
+            box-shadow: 0 10px 24px -8px rgba(99,102,241,.8);
         }
         .login-brand h1 {
             font-size: var(--font-size-xl);

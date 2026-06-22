@@ -226,7 +226,7 @@
 
 {% if can_send %}
 <div class="modal-overlay" id="sendModal">
-    <div class="modal" style="width:520px;">
+    <div class="modal" style="width:680px;">
         <div class="modal-header">
             <h3><i class="fa-solid fa-paper-plane"></i> Send Memorandum</h3>
             <button class="modal-close" data-modal-close="sendModal"><i class="fa-solid fa-xmark"></i></button>
@@ -235,32 +235,64 @@
             {% csrf_token %}
             <div class="modal-body">
                 <p class="text-sm text-muted mb-4">
-                    Sent to all department members listed below. Optionally add individuals.
+                    Choose the recipients for this memorandum. Selecting a department delivers it to
+                    everyone in that department; you can also pick individual employees.
                 </p>
-                {% if memo.departments.exists %}
-                <div class="alert alert-info mb-4">
-                    <i class="fa-solid fa-building"></i>
-                    <span>Departments: <strong>{{ memo.department_names }}</strong></span>
-                </div>
-                {% endif %}
-                <div class="form-group">
-                    <label class="form-label">Additional Recipients <span class="text-muted" style="font-weight:normal;">(optional)</span></label>
+                <div class="recipient-selector" id="sendRecipientSelector">
                     <div class="recipient-panel">
+                        <div class="recipient-panel-header">
+                            <h4><i class="fa-solid fa-building"></i> Departments</h4>
+                            <span class="recipient-count-badge" id="sendDeptCount">0</span>
+                        </div>
                         <div class="recipient-search">
                             <i class="fa-solid fa-magnifying-glass"></i>
-                            <input type="text" id="sendUserSearch" placeholder="Search users..." autocomplete="off">
+                            <input type="text" id="sendDeptSearch" placeholder="Filter departments..." autocomplete="off">
                         </div>
-                        <div class="recipient-list" id="sendUserList" style="max-height:180px;">
+                        <div class="recipient-list" id="sendDeptList" style="max-height:240px;">
+                            {% for d in send_form_departments %}
+                            <label class="recipient-item {% if d.pk in memo_department_ids %}selected{% endif %}"
+                                   data-name="{{ d.name|lower }} {{ d.code|lower }}">
+                                <input type="checkbox" class="js-dept-check" name="target_departments"
+                                       value="{{ d.pk }}" data-dept="{{ d.pk }}"
+                                       {% if d.pk in memo_department_ids %}checked{% endif %}>
+                                <div class="recipient-item-info">
+                                    <div class="recipient-item-name">{{ d.name }}</div>
+                                    <div class="recipient-item-sub">{{ d.code }} &middot; {{ d.member_count }} member{{ d.member_count|pluralize }}</div>
+                                </div>
+                            </label>
+                            {% empty %}
+                            <div class="empty-state" style="padding:var(--space-6);">
+                                <i class="fa-solid fa-building"></i><p>No department available.</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="recipient-panel">
+                        <div class="recipient-panel-header">
+                            <h4><i class="fa-solid fa-users"></i> Employees</h4>
+                            <span class="recipient-count-badge" id="sendUserCount">0</span>
+                        </div>
+                        <div class="recipient-search">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="sendUserSearch" placeholder="Search employees..." autocomplete="off">
+                        </div>
+                        <label class="recipient-select-all">
+                            <input type="checkbox" id="sendUserSelectAll"> Select all visible
+                        </label>
+                        <div class="recipient-list" id="sendUserList" style="max-height:200px;">
                             {% for u in send_form_users %}
                             <label class="recipient-item" data-name="{{ u.get_full_name|lower }} {{ u.username|lower }}">
-                                <input type="checkbox" name="individual_recipients" value="{{ u.pk }}">
+                                <input type="checkbox" class="js-user-check" name="individual_recipients"
+                                       value="{{ u.pk }}" data-dept="{{ u.department_id|default_if_none:'' }}">
                                 <div class="recipient-item-info">
                                     <div class="recipient-item-name">{{ u.get_full_name|default:u.username }}</div>
                                     <div class="recipient-item-sub">{{ u.department.name|default:"No department" }}</div>
                                 </div>
                             </label>
                             {% empty %}
-                            <div class="empty-state" style="padding:var(--space-4);"><p>No users available.</p></div>
+                            <div class="empty-state" style="padding:var(--space-6);">
+                                <i class="fa-solid fa-users"></i><p>No employees available.</p>
+                            </div>
                             {% endfor %}
                         </div>
                     </div>
@@ -277,10 +309,54 @@
 </div>
 <script>
 (function(){
-    const s=document.getElementById("sendUserSearch"),l=document.getElementById("sendUserList");
-    if(s&&l){
-        s.addEventListener("input",()=>{const q=s.value.toLowerCase();l.querySelectorAll(".recipient-item").forEach(i=>{i.style.display=i.dataset.name.includes(q)?"":"none";});});
-        l.querySelectorAll(".recipient-item").forEach(i=>{const c=i.querySelector("input");if(c)c.addEventListener("change",()=>i.classList.toggle("selected",c.checked));});
+    const root = document.getElementById("sendRecipientSelector");
+    if(!root) return;
+
+    function panel(listId, searchId, countId){
+        const list = document.getElementById(listId);
+        const search = document.getElementById(searchId);
+        const count = document.getElementById(countId);
+        if(!list) return null;
+        const items = Array.from(list.querySelectorAll(".recipient-item"));
+        function refresh(){
+            items.forEach(i=>{const c=i.querySelector('input');if(c)i.classList.toggle("selected",c.checked);});
+            if(count) count.textContent = list.querySelectorAll('input:checked').length;
+        }
+        items.forEach(i=>{const c=i.querySelector('input');if(c)c.addEventListener("change",refresh);});
+        if(search){search.addEventListener("input",()=>{
+            const q=search.value.toLowerCase();
+            items.forEach(i=>{i.style.display=(i.dataset.name||"").includes(q)?"":"none";});
+        });}
+        refresh();
+        return {list, items, refresh};
+    }
+
+    const deptPanel = panel("sendDeptList","sendDeptSearch","sendDeptCount");
+    const userPanel = panel("sendUserList","sendUserSearch","sendUserCount");
+
+    // Selecting a department toggles all its employees for convenience.
+    if(deptPanel && userPanel){
+        deptPanel.list.querySelectorAll(".js-dept-check").forEach(dc=>{
+            dc.addEventListener("change",()=>{
+                const id=dc.dataset.dept;
+                userPanel.list.querySelectorAll('.js-user-check[data-dept="'+id+'"]').forEach(uc=>{
+                    uc.checked=dc.checked;
+                });
+                userPanel.refresh();
+            });
+        });
+    }
+
+    // Select-all visible employees.
+    const selectAll=document.getElementById("sendUserSelectAll");
+    if(selectAll && userPanel){
+        selectAll.addEventListener("change",()=>{
+            userPanel.items.forEach(i=>{
+                if(i.style.display==="none")return;
+                const c=i.querySelector('input');if(c)c.checked=selectAll.checked;
+            });
+            userPanel.refresh();
+        });
     }
 })();
 </script>

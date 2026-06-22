@@ -489,3 +489,101 @@ textarea.form-control{min-height:160px;resize:vertical}
   0%,100% { opacity: 1; }
   50%      { opacity: 0.3; }
 }
+
+/* ============================================
+   M.I.N.D.S — Part 3: Modern Refresh
+   Gradients + tasteful motion, same palette
+   ============================================ */
+
+/* ── Keyframes ──────────────────────────────── */
+@keyframes mindsFadeUp   { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes mindsFadeIn   { from { opacity:0; } to { opacity:1; } }
+@keyframes mindsScaleIn  { from { opacity:0; transform:translateY(-10px) scale(.98); } to { opacity:1; transform:none; } }
+@keyframes mindsRowIn    { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:none; } }
+@keyframes mindsSheen    { from { background-position:-160% 0; } to { background-position:260% 0; } }
+
+/* ── Page + section entrance ────────────────── */
+.page-content { animation: mindsFadeUp .32s ease both; }
+.card,
+.stat-card,
+.table-wrapper,
+.status-banner,
+.rejection-panel,
+.empty-state { animation: mindsFadeUp .34s ease both; }
+.stats-grid > .stat-card:nth-child(2){ animation-delay:.04s; }
+.stats-grid > .stat-card:nth-child(3){ animation-delay:.08s; }
+.stats-grid > .stat-card:nth-child(4){ animation-delay:.12s; }
+
+/* ── Sidebar gradient + motion ──────────────── */
+.sidebar { background: var(--gradient-sidebar); }
+.sidebar-brand-icon { background: var(--gradient-primary); box-shadow: 0 6px 16px -6px rgba(99,102,241,.7); }
+.sidebar-link { transition: background var(--transition-speed), color var(--transition-speed), transform var(--transition-speed); }
+.sidebar-link:hover { transform: translateX(2px); }
+.sidebar-link.active {
+  background: var(--gradient-primary);
+  box-shadow: 0 6px 16px -8px rgba(99,102,241,.8);
+}
+.sidebar-link.active::before {
+  content:""; position:absolute; left:0; top:6px; bottom:6px; width:3px;
+  border-radius: var(--radius-full); background:#fff; opacity:.85;
+}
+
+/* ── Topbar polish ──────────────────────────── */
+.topbar { background: rgba(255,255,255,.85); backdrop-filter: blur(8px); }
+
+/* ── Buttons: subtle gradient + lift ────────── */
+.btn { transition: background var(--transition-speed), border-color var(--transition-speed), color var(--transition-speed), transform var(--transition-speed), box-shadow var(--transition-speed); }
+.btn-primary {
+  background: var(--gradient-primary);
+  box-shadow: 0 6px 14px -8px rgba(79,70,229,.85);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 20px -8px rgba(79,70,229,.9); }
+.btn-secondary:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+
+/* ── Cards: hover elevation ─────────────────── */
+.card { background: var(--gradient-surface); transition: box-shadow var(--transition-speed), transform var(--transition-speed); }
+.card:hover { box-shadow: var(--shadow-md); }
+.stat-card { transition: box-shadow var(--transition-speed), transform var(--transition-speed), border-color var(--transition-speed); }
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color:#c7d2fe; }
+.stat-card-icon.primary { background: var(--color-primary-light); }
+
+/* ── Tables: animated rows + crisper hover ──── */
+.data-table tbody tr { animation: mindsRowIn .26s ease both; }
+.data-table tbody tr:hover { background: var(--color-primary-light); }
+
+/* ── Badges: gentle depth ───────────────────── */
+.badge { box-shadow: inset 0 0 0 1px rgba(15,23,42,.04); }
+
+/* ── Inputs: brand focus ring ───────────────── */
+.form-control:focus,
+.search-bar input:focus,
+.recipient-search input:focus { box-shadow: var(--ring-primary); }
+
+/* ── Modal entrance ─────────────────────────── */
+.modal-overlay { backdrop-filter: blur(2px); }
+.modal-overlay.active .modal { animation: mindsScaleIn .22s ease both; }
+
+/* ── Stepper active pulse ───────────────────── */
+.stepper-step.active .stepper-dot { box-shadow: 0 0 0 4px var(--color-primary-light); }
+
+/* ── Recipient selector polish ──────────────── */
+.recipient-panel { transition: border-color var(--transition-speed), box-shadow var(--transition-speed); }
+.recipient-panel:focus-within { border-color: var(--color-primary); box-shadow: var(--ring-primary); }
+.recipient-item { transition: background var(--transition-speed), transform var(--transition-speed); }
+.recipient-item:hover { transform: translateX(2px); }
+.recipient-count-badge { background: var(--gradient-primary); color:#fff; }
+
+/* ── Live badge shimmer on title accent ─────── */
+.page-header h1 { background: none; }
+
+/* ── Alerts: left accent bar ────────────────── */
+.alert { border-left-width: 3px; }
+
+/* ── Login screen (centered card, gradient bg) ─ */
+.auth-body, body.auth { background: var(--gradient-sidebar); }
+
+/* ── Accessibility: respect reduced motion ──── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
